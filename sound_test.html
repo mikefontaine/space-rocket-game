@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛸 Sound Sandbox - Luna's Grand Space Adventure! 🛸</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #060a17;
+            --card-bg: rgba(10, 22, 47, 0.45);
+            --border-color: rgba(0, 229, 255, 0.25);
+            --text-color: #ffffff;
+            --neon-blue: #00ffff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --neon-yellow: #ffea00;
+            --neon-purple: #b388ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, #101935 0%, #060a17 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 90%;
+            padding: 40px 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        header {
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 2.8rem;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0,255,255,0.25);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #80deea;
+            margin: 0;
+        }
+
+        .sandbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .sound-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px 20px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .sound-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--hover-color);
+            box-shadow: 0 12px 40px 0 var(--shadow-color);
+        }
+
+        .play-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #10162b, #0d1e3a);
+            border: 2px solid var(--hover-color);
+            color: var(--hover-color);
+            font-size: 1.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .play-btn:hover {
+            background: var(--hover-color);
+            color: #000;
+            box-shadow: 0 0 25px var(--hover-color);
+            transform: scale(1.08);
+        }
+
+        .play-btn:active {
+            transform: scale(0.95);
+        }
+
+        h2 {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.4rem;
+            margin: 0 0 10px 0;
+            color: #ffffff;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: #b0bec5;
+            margin: 0;
+            line-height: 1.4;
+            height: 60px;
+        }
+
+        .card-tag {
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.07);
+            margin-top: 15px;
+            color: var(--hover-color);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        footer {
+            margin-top: 20px;
+            color: #546e7a;
+            font-size: 0.9rem;
+        }
+
+        /* Specific card colors on hover */
+        .card-1 { --hover-color: var(--neon-yellow); --shadow-color: rgba(255, 234, 0, 0.15); }
+        .card-2 { --hover-color: var(--neon-pink); --shadow-color: rgba(255, 0, 127, 0.15); }
+        .card-3 { --hover-color: var(--neon-green); --shadow-color: rgba(57, 255, 20, 0.15); }
+        .card-4 { --hover-color: var(--neon-blue); --shadow-color: rgba(0, 255, 255, 0.15); }
+        .card-5 { --hover-color: var(--neon-purple); --shadow-color: rgba(179, 136, 255, 0.15); }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🛸 Celebration Sound Sandbox</h1>
+            <p class="subtitle" style="height: auto;">Luna's Grand Space Adventure — Chiptune SFX Candidates</p>
+        </header>
+
+        <div class="sandbox-grid">
+            
+            <!-- Sound 1 -->
+            <div class="sound-card card-1">
+                <button class="play-btn" onclick="playSecretChime()">▶</button>
+                <h2>The Secret Chime</h2>
+                <p>An ascending arpeggio of bright, magical chimes with a perfect fifth overlay. Sparkly and rewarding.</p>
+                <div class="card-tag">ZELDA-INSPIRED</div>
+            </div>
+
+            <!-- Sound 2 -->
+            <div class="sound-card card-2">
+                <button class="play-btn" onclick="playVictoryFanfare()">▶</button>
+                <h2>Victory Fanfare</h2>
+                <p>Rising staccato notes in a square wave, resolving on a sustained C-Major chord with heroic retro LFO warble.</p>
+                <div class="card-tag">MARIO-INSPIRED</div>
+            </div>
+
+            <!-- Sound 3 -->
+            <div class="sound-card card-3">
+                <button class="play-btn" onclick="playStarSparkles()">▶</button>
+                <h2>Star Cascade</h2>
+                <p>A fast, cascading sweep of high-pitched chimes that slide down and pop upwards. Feels like a magical upgrade.</p>
+                <div class="card-tag">UPGRADE JINGLE</div>
+            </div>
+
+            <!-- Sound 4 -->
+            <div class="sound-card card-4">
+                <button class="play-btn" onclick="playSpaceFanfare()">▶</button>
+                <h2>Space Fanfare</h2>
+                <p>A brassy chord swell, followed by staccato rises, resolving on a heroic sustained sweep chord. Brassy & retro.</p>
+                <div class="card-tag">STAR FOX-INSPIRED</div>
+            </div>
+
+            <!-- Sound 5 -->
+            <div class="sound-card card-5">
+                <button class="play-btn" onclick="playChiptuneCheer()">▶</button>
+                <h2>Chiptune Cheer</h2>
+                <p>Playful alien bubble-slides that sweep upwards, ending in a cute whistle chirp that sounds like "YAY!"</p>
+                <div class="card-tag">CUTE CARTOON CHEER</div>
+            </div>
+
+        </div>
+
+        <!-- Space Fanfare Variations Section -->
+        <div style="margin: 50px 0 25px 0; text-align: left; border-bottom: 2px solid rgba(0, 229, 255, 0.2); padding-bottom: 10px; width: 100%;">
+            <h2 style="font-family: 'Fredoka', sans-serif; font-size: 2rem; color: var(--neon-blue); margin: 0;">🚀 Space Fanfare Variations</h2>
+            <p style="color: #80deea; font-size: 1.05rem; margin: 5px 0 0 0; height: auto;">Testing pitch multiplier repeats, dynamic sci-fi modulations, and retro 8-bit melodic riffs.</p>
+        </div>
+
+        <div class="sandbox-grid" style="margin-bottom: 50px;">
+            <!-- Var 1 -->
+            <div class="sound-card card-3">
+                <button class="play-btn" onclick="playSpaceFanfareOctaves()">▶</button>
+                <h2>Octave Step-Up</h2>
+                <p>Plays the fanfare three times starting one octave lower, shifting up by one octave on each repeat. Deep, warm, and rising.</p>
+                <div class="card-tag">OCTAVE TRIPLE</div>
+            </div>
+
+            <!-- Var 2 -->
+            <div class="sound-card card-4">
+                <button class="play-btn" onclick="playSpaceFanfareModulated()">▶</button>
+                <h2>Modulated Swell</h2>
+                <p>Three repeats layered with changing rates of sci-fi filter cutoff sweeping, pitch vibrato, and detuned chorus layers.</p>
+                <div class="card-tag">MODULATION TRIPLE</div>
+            </div>
+
+            <!-- Var 3 -->
+            <div class="sound-card card-5">
+                <button class="play-btn" onclick="playSpaceFanfareRiff()">▶</button>
+                <h2>Heroic Riff Solo</h2>
+                <p>Starts with the core fanfare, segues into an energetic syncopated chiptune arpeggio run, and ends with a gliding chord.</p>
+                <div class="card-tag">8-BIT ARCADE RIFF</div>
+            </div>
+        </div>
+
+        <footer>
+            Click any button above to play the sound. Made with Web Audio API. 💫
+        </footer>
+    </div>
+
+    <script>
+        let ctx = null;
+
+        function initAudio() {
+            if (!ctx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                ctx = new AudioContext();
+            }
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+        }
+
+        // 1. Zelda-inspired Secret Chime
+        function playSecretChime() {
+            initAudio();
+            const now = ctx.currentTime;
+            const notes = [392.00, 370.00, 311.13, 220.00, 207.65, 329.63, 415.30, 523.25]; // G4, F#4, D#4, A3, G#3, E4, G#4, C5
+            const melody = notes.map(n => n * 2); // Pitch up by 1 octave for chime range
+            
+            melody.forEach((freq, idx) => {
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc1.type = 'sine'; // Pure whistle/chime
+                osc1.frequency.setValueAtTime(freq, now + idx * 0.075);
+                
+                osc2.type = 'triangle'; // Warm body
+                osc2.frequency.setValueAtTime(freq * 1.5, now + idx * 0.075); // Perfect fifth chord layer
+                
+                gain.gain.setValueAtTime(0.09, now + idx * 0.075);
+                gain.gain.linearRampToValueAtTime(0.001, now + idx * 0.075 + 0.14);
+                
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc1.start(now + idx * 0.075);
+                osc2.start(now + idx * 0.075);
+                osc1.stop(now + idx * 0.075 + 0.15);
+                osc2.stop(now + idx * 0.075 + 0.15);
+            });
+        }
+
+        // 2. Mario-inspired Victory Fanfare
+        function playVictoryFanfare() {
+            initAudio();
+            const now = ctx.currentTime;
+            
+            const arpeggio = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // C4, E4, G4, C5, E5, G5
+            const chord = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            
+            arpeggio.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'square'; // Chiptune lead pulse
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                
+                gain.gain.setValueAtTime(0.06, now + idx * 0.08);
+                gain.gain.linearRampToValueAtTime(0.001, now + idx * 0.08 + 0.08);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.09);
+            });
+            
+            const chordTime = now + arpeggio.length * 0.08;
+            chord.forEach((freq) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                // Add a cute vibrato LFO
+                const lfo = ctx.createOscillator();
+                const lfoGain = ctx.createGain();
+                lfo.frequency.setValueAtTime(8.5, chordTime);
+                lfoGain.gain.setValueAtTime(8, chordTime);
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, chordTime);
+                
+                gain.gain.setValueAtTime(0.05, chordTime);
+                gain.gain.linearRampToValueAtTime(0.001, chordTime + 0.45);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                lfo.start(chordTime);
+                osc.start(chordTime);
+                
+                lfo.stop(chordTime + 0.45);
+                osc.stop(chordTime + 0.45);
+            });
+        }
+
+        // 3. Shimmering Star Sparkles (Magical Upgrade)
+        function playStarSparkles() {
+            initAudio();
+            const now = ctx.currentTime;
+            
+            // Shimmering cascading pentatonic drops resolving upwards
+            const notes = [1567.98, 1318.51, 1174.66, 1046.50, 880.00, 783.99, 880.00, 1046.50, 1318.51, 1567.98];
+            
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.045);
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.95, now + idx * 0.045 + 0.05); // Tiny slide
+                
+                gain.gain.setValueAtTime(0.08, now + idx * 0.045);
+                gain.gain.linearRampToValueAtTime(0.001, now + idx * 0.045 + 0.05);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(now + idx * 0.045);
+                osc.stop(now + idx * 0.045 + 0.06);
+            });
+        }
+
+        // 4. Sci-Fi Space Fanfare (Star Fox-inspired)
+        function playSpaceFanfare() {
+            initAudio();
+            const now = ctx.currentTime;
+            
+            const steps = [
+                { type: 'chord', freqs: [196.00, 293.66, 392.00], time: 0, dur: 0.22 }, // G3 swell
+                { type: 'note', freq: 392.00, time: 0.22, dur: 0.1 }, 
+                { type: 'note', freq: 440.00, time: 0.32, dur: 0.1 }, 
+                { type: 'note', freq: 493.88, time: 0.42, dur: 0.1 }, 
+                { type: 'chord', freqs: [523.25, 659.25, 783.99, 1046.50], time: 0.52, dur: 0.55 } // Triumphant resolve
+            ];
+            
+            steps.forEach((step) => {
+                const triggerTime = now + step.time;
+                if (step.type === 'chord') {
+                    step.freqs.forEach((freq) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        const lfo = ctx.createOscillator();
+                        const lfoGain = ctx.createGain();
+                        
+                        lfo.frequency.setValueAtTime(6.5, triggerTime);
+                        lfoGain.gain.setValueAtTime(7, triggerTime);
+                        lfo.connect(lfoGain);
+                        lfoGain.connect(osc.frequency);
+                        
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(freq, triggerTime);
+                        
+                        const filter = ctx.createBiquadFilter();
+                        filter.type = 'bandpass';
+                        filter.frequency.setValueAtTime(freq * 2.3, triggerTime);
+                        filter.Q.value = 1.2;
+                        
+                        gain.gain.setValueAtTime(0.06, triggerTime);
+                        gain.gain.linearRampToValueAtTime(0.001, triggerTime + step.dur);
+                        
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        lfo.start(triggerTime);
+                        osc.start(triggerTime);
+                        
+                        lfo.stop(triggerTime + step.dur);
+                        osc.stop(triggerTime + step.dur);
+                    });
+                } else {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(step.freq, triggerTime);
+                    
+                    gain.gain.setValueAtTime(0.12, triggerTime);
+                    gain.gain.linearRampToValueAtTime(0.001, triggerTime + step.dur);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.start(triggerTime);
+                    osc.stop(triggerTime + step.dur);
+                }
+            });
+        }
+
+        // 5. Retro Chiptune Cheer (Alien "Yay" sequence)
+        function playChiptuneCheer() {
+            initAudio();
+            const now = ctx.currentTime;
+            
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.3, now + idx * 0.05 + 0.1);
+                
+                gain.gain.setValueAtTime(0.09, now + idx * 0.05);
+                gain.gain.linearRampToValueAtTime(0.001, now + idx * 0.05 + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(now + idx * 0.05);
+                osc.stop(now + idx * 0.05 + 0.11);
+            });
+            
+            // Upward high sine chirp representing the YAY!
+            const chirpTime = now + 0.22;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1174.66, chirpTime); // D6
+            osc.frequency.linearRampToValueAtTime(1567.98, chirpTime + 0.14); // G6
+            
+            gain.gain.setValueAtTime(0.08, chirpTime);
+            gain.gain.linearRampToValueAtTime(0.001, chirpTime + 0.14);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(chirpTime);
+            osc.stop(chirpTime + 0.15);
+        }
+
+        // --- Space Fanfare Variations ---
+
+        // Variation 1: Octave Step-Up (Triumphant climb)
+        function playSpaceFanfareOctaves() {
+            initAudio();
+            const now = ctx.currentTime;
+            
+            const triggerMotif = (delay, pitchMult, volMult) => {
+                const triggerTime = now + delay;
+                const steps = [
+                    { type: 'chord', freqs: [196.00, 293.66, 392.00], time: 0, dur: 0.22 },
+                    { type: 'note', freq: 392.00, time: 0.22, dur: 0.1 }, 
+                    { type: 'note', freq: 440.00, time: 0.32, dur: 0.1 }, 
+                    { type: 'note', freq: 493.88, time: 0.42, dur: 0.1 }, 
+                    { type: 'chord', freqs: [523.25, 659.25, 783.99, 1046.50], time: 0.52, dur: 0.55 }
+                ];
+                
+                steps.forEach((step) => {
+                    const stepTime = triggerTime + step.time;
+                    if (step.type === 'chord') {
+                        step.freqs.forEach((freq) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            const lfo = ctx.createOscillator();
+                            const lfoGain = ctx.createGain();
+                            
+                            lfo.frequency.setValueAtTime(6.5, stepTime);
+                            lfoGain.gain.setValueAtTime(7 * pitchMult, stepTime);
+                            lfo.connect(lfoGain);
+                            lfoGain.connect(osc.frequency);
+                            
+                            osc.type = 'sawtooth';
+                            osc.frequency.setValueAtTime(freq * pitchMult, stepTime);
+                            
+                            const filter = ctx.createBiquadFilter();
+                            filter.type = 'bandpass';
+                            filter.frequency.setValueAtTime(freq * pitchMult * 2.3, stepTime);
+                            filter.Q.value = 1.2;
+                            
+                            gain.gain.setValueAtTime(0.04 * volMult, stepTime);
+                            gain.gain.linearRampToValueAtTime(0.001, stepTime + step.dur);
+                            
+                            osc.connect(filter);
+                            filter.connect(gain);
+                            gain.connect(ctx.destination);
+                            
+                            lfo.start(stepTime);
+                            osc.start(stepTime);
+                            
+                            lfo.stop(stepTime + step.dur);
+                            osc.stop(stepTime + step.dur);
+                        });
+                    } else {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(step.freq * pitchMult, stepTime);
+                        
+                        gain.gain.setValueAtTime(0.09 * volMult, stepTime);
+                        gain.gain.linearRampToValueAtTime(0.001, stepTime + step.dur);
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc.start(stepTime);
+                        osc.stop(stepTime + step.dur);
+                    }
+                });
+            };
+            
+            triggerMotif(0, 0.5, 1.20);   // Start 1 octave lower, slightly louder (1.20x)
+            triggerMotif(0.85, 1.0, 1.00); // Standard octave
+            triggerMotif(1.70, 2.0, 0.80); // 1 octave higher
+
+            // Ascending chiptune flourish at the end (pitched 1 octave lower, final note held longer)
+            const flourishTime = now + 2.30; // Starts right as the final high chord hits
+            const flourishNotes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1318.51, 1567.98, 2093.00]; // One octave lower (C5 to C7)
+            
+            flourishNotes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine'; // pure magical chime
+                osc.frequency.setValueAtTime(freq, flourishTime + idx * 0.045); // fast 45ms step duration
+                
+                const isLast = idx === flourishNotes.length - 1;
+                const noteDur = isLast ? 1.25 : 0.08; // Hold final note for 1.25s (extra beat)
+                const vol = isLast ? 0.09 : 0.055;
+                
+                gain.gain.setValueAtTime(vol, flourishTime + idx * 0.045);
+                gain.gain.linearRampToValueAtTime(0.001, flourishTime + idx * 0.045 + noteDur);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(flourishTime + idx * 0.045);
+                osc.stop(flourishTime + idx * 0.045 + noteDur + 0.01);
+            });
+        }
+
+        // Variation 2: Modulated Swell (Evolving retro sweeps)
+        function playSpaceFanfareModulated() {
+            initAudio();
+            const now = ctx.currentTime;
+            
+            const triggerMotifMod = (delay, pitchMult, volMult, modType) => {
+                const triggerTime = now + delay;
+                const steps = [
+                    { type: 'chord', freqs: [196.00, 293.66, 392.00], time: 0, dur: 0.22 },
+                    { type: 'note', freq: 392.00, time: 0.22, dur: 0.1 }, 
+                    { type: 'note', freq: 440.00, time: 0.32, dur: 0.1 }, 
+                    { type: 'note', freq: 493.88, time: 0.42, dur: 0.1 }, 
+                    { type: 'chord', freqs: [523.25, 659.25, 783.99, 1046.50], time: 0.52, dur: 0.55 }
+                ];
+                
+                steps.forEach((step) => {
+                    const stepTime = triggerTime + step.time;
+                    if (step.type === 'chord') {
+                        step.freqs.forEach((freq) => {
+                            const playSynth = (detuneAmt) => {
+                                const osc = ctx.createOscillator();
+                                const gain = ctx.createGain();
+                                
+                                osc.type = 'sawtooth';
+                                osc.frequency.setValueAtTime(freq * pitchMult, stepTime);
+                                osc.detune.setValueAtTime(detuneAmt, stepTime);
+                                
+                                // Biquad Filter
+                                const filter = ctx.createBiquadFilter();
+                                filter.type = 'bandpass';
+                                filter.frequency.setValueAtTime(freq * pitchMult * 2.3, stepTime);
+                                filter.Q.value = 1.5;
+                                
+                                // LFO setups based on modulation type
+                                let lfo = null;
+                                let lfoGain = null;
+                                
+                                if (modType === 2) {
+                                    // Filter sweep LFO (wah-wah)
+                                    lfo = ctx.createOscillator();
+                                    lfoGain = ctx.createGain();
+                                    lfo.frequency.setValueAtTime(7.0, stepTime); // 7Hz filter sweep
+                                    lfoGain.gain.setValueAtTime(freq * pitchMult * 0.8, stepTime); // modulation depth
+                                    lfo.connect(lfoGain);
+                                    lfoGain.connect(filter.frequency);
+                                } else if (modType === 3) {
+                                    // Pitch LFO (extreme sci-fi vibrato)
+                                    lfo = ctx.createOscillator();
+                                    lfoGain = ctx.createGain();
+                                    lfo.frequency.setValueAtTime(11.0, stepTime); // 11Hz fast pitch vibrato
+                                    lfoGain.gain.setValueAtTime(20 * pitchMult, stepTime); // vibrato depth
+                                    lfo.connect(lfoGain);
+                                    lfoGain.connect(osc.frequency);
+                                    
+                                    // Exponential sweep of cutoff filter
+                                    filter.frequency.exponentialRampToValueAtTime(freq * pitchMult * 4.0, stepTime + step.dur);
+                                } else {
+                                    // ModType 1: standard subtle vibrato
+                                    lfo = ctx.createOscillator();
+                                    lfoGain = ctx.createGain();
+                                    lfo.frequency.setValueAtTime(4.5, stepTime);
+                                    lfoGain.gain.setValueAtTime(4 * pitchMult, stepTime);
+                                    lfo.connect(lfoGain);
+                                    lfoGain.connect(osc.frequency);
+                                }
+                                
+                                gain.gain.setValueAtTime(0.03 * volMult, stepTime);
+                                gain.gain.linearRampToValueAtTime(0.001, stepTime + step.dur);
+                                
+                                osc.connect(filter);
+                                filter.connect(gain);
+                                gain.connect(ctx.destination);
+                                
+                                osc.start(stepTime);
+                                if (lfo) lfo.start(stepTime);
+                                
+                                osc.stop(stepTime + step.dur);
+                                if (lfo) lfo.stop(stepTime + step.dur);
+                            };
+                            
+                            if (modType === 3) {
+                                // Chorus detune layer
+                                playSynth(-15);
+                                playSynth(15);
+                            } else {
+                                playSynth(0);
+                            }
+                        });
+                    } else {
+                        // Triangles for lead notes
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(step.freq * pitchMult, stepTime);
+                        
+                        if (modType === 3) {
+                            const lfo = ctx.createOscillator();
+                            const lfoGain = ctx.createGain();
+                            lfo.frequency.setValueAtTime(10, stepTime);
+                            lfoGain.gain.setValueAtTime(10, stepTime);
+                            lfo.connect(lfoGain);
+                            lfoGain.connect(osc.frequency);
+                            lfo.start(stepTime);
+                            lfo.stop(stepTime + step.dur);
+                        }
+                        
+                        gain.gain.setValueAtTime(0.07 * volMult, stepTime);
+                        gain.gain.linearRampToValueAtTime(0.001, stepTime + step.dur);
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc.start(stepTime);
+                        osc.stop(stepTime + step.dur);
+                    }
+                });
+            };
+            
+            triggerMotifMod(0, 1.0, 1.0, 1);       // Normal, low mod
+            triggerMotifMod(0.85, 2.0, 0.85, 2);   // Octave up, filter mod
+            triggerMotifMod(1.70, 4.0, 0.70, 3);   // Double octave up, detune + heavy pitch mod
+        }
+
+        // Variation 3: Heroic Riff Solo (8-Bit Arcade Riff)
+        function playSpaceFanfareRiff() {
+            initAudio();
+            const now = ctx.currentTime;
+            
+            // Helper to play a single note on a square wave
+            const playSquare = (freq, timeOffset, dur, vol = 0.05) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, now + timeOffset);
+                
+                gain.gain.setValueAtTime(vol, now + timeOffset);
+                gain.gain.linearRampToValueAtTime(0.001, now + timeOffset + dur);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + timeOffset);
+                osc.stop(now + timeOffset + dur + 0.01);
+            };
+
+            // Helper to play a single note on a triangle wave
+            const playTriangle = (freq, timeOffset, dur, vol = 0.08) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + timeOffset);
+                
+                gain.gain.setValueAtTime(vol, now + timeOffset);
+                gain.gain.linearRampToValueAtTime(0.001, now + timeOffset + dur);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + timeOffset);
+                osc.stop(now + timeOffset + dur + 0.01);
+            };
+
+            // Helper to play a chord with filter sweep
+            const playBrassyChord = (freqs, timeOffset, dur, vol = 0.04, slideFreqs = null) => {
+                freqs.forEach((freq, idx) => {
+                    const osc1 = ctx.createOscillator();
+                    const osc2 = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc1.type = 'sawtooth';
+                    osc1.frequency.setValueAtTime(freq, now + timeOffset);
+                    osc2.type = 'sawtooth';
+                    osc2.frequency.setValueAtTime(freq * 0.995, now + timeOffset); // subtle detune
+                    
+                    if (slideFreqs && slideFreqs[idx]) {
+                        osc1.frequency.linearRampToValueAtTime(slideFreqs[idx], now + timeOffset + dur * 0.7);
+                        osc2.frequency.linearRampToValueAtTime(slideFreqs[idx] * 0.995, now + timeOffset + dur * 0.7);
+                    }
+                    
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(freq * 2.3, now + timeOffset);
+                    filter.frequency.exponentialRampToValueAtTime(freq * 3.5, now + timeOffset + dur);
+                    filter.Q.value = 1.0;
+                    
+                    gain.gain.setValueAtTime(vol, now + timeOffset);
+                    gain.gain.linearRampToValueAtTime(0.001, now + timeOffset + dur);
+                    
+                    osc1.connect(filter);
+                    osc2.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc1.start(now + timeOffset);
+                    osc2.start(now + timeOffset);
+                    osc1.stop(now + timeOffset + dur);
+                    osc2.stop(now + timeOffset + dur);
+                });
+            };
+
+            // --- 1. Main Space Fanfare Motif (0.0s - 0.8s) ---
+            playBrassyChord([196.00, 293.66, 392.00], 0.0, 0.22, 0.04); // G3 swell
+            playTriangle(392.00, 0.22, 0.08); // G4
+            playTriangle(440.00, 0.30, 0.08); // A4
+            playTriangle(493.88, 0.38, 0.08); // B4
+            playBrassyChord([523.25, 659.25, 783.99, 1046.50], 0.46, 0.30, 0.035); // C5 chord
+
+            // --- 2. Syncopated Chiptune Melody (0.8s - 1.5s) ---
+            playSquare(659.25, 0.76, 0.08);  // E5
+            playSquare(783.99, 0.84, 0.08);  // G5
+            playSquare(880.00, 0.92, 0.08);  // A5
+            playSquare(1046.50, 1.00, 0.12); // C6 (accented)
+            playSquare(987.77, 1.12, 0.08);  // B5
+            playSquare(783.99, 1.20, 0.08);  // G5
+            playSquare(659.25, 1.28, 0.08);  // E5
+            playSquare(587.33, 1.36, 0.08);  // D5
+            playSquare(523.25, 1.44, 0.12);  // C5
+
+            // --- 3. Double-Time Ascending Scale (1.6s - 2.1s) ---
+            playSquare(523.25, 1.60, 0.05);  // C5
+            playSquare(659.25, 1.65, 0.05);  // E5
+            playSquare(783.99, 1.70, 0.05);  // G5
+            playSquare(1046.50, 1.75, 0.05); // C6
+            playSquare(587.33, 1.80, 0.05);  // D5
+            playSquare(698.46, 1.85, 0.05);  // F5
+            playSquare(880.00, 1.90, 0.05);  // A5
+            playSquare(1174.66, 1.95, 0.05); // D6
+            playSquare(1318.51, 2.00, 0.05); // E6
+            playSquare(1567.98, 2.05, 0.08); // G6
+
+            // --- 4. Grand Triumphant Final Chord with pitch slide & high sparkles (2.15s - 3.2s) ---
+            // Slide C5 -> E5, E5 -> G5, G5 -> C6, C6 -> E6
+            playBrassyChord(
+                [523.25, 659.25, 783.99, 1046.50], 
+                2.15, 
+                1.0, 
+                0.035, 
+                [659.25, 783.99, 1046.50, 1318.51]
+            );
+            
+            // Sparkly arpeggio layer on top of final chord
+            const sparkles = [1567.98, 1975.53, 2093.00, 2637.02, 3135.96]; // G6, B6, C7, E7, G7
+            sparkles.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + 2.15 + idx * 0.06);
+                
+                gain.gain.setValueAtTime(0.04, now + 2.15 + idx * 0.06);
+                gain.gain.linearRampToValueAtTime(0.001, now + 2.15 + idx * 0.06 + 0.12);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + 2.15 + idx * 0.06);
+                osc.stop(now + 2.15 + idx * 0.06 + 0.15);
+            });
+        }
+    </script>
+</body>
+</html>

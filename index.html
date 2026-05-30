@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🛸 Luna's Grand Space Adventure! 🛸</title>
+    <meta name="description" content="A simple, colorful, first-person space flight simulator game designed for kids. Perfect for a monitor window in a rocket playset.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Start Overlay Screen to enable browser Audio Context on click -->
+    <div id="startOverlay" onclick="launchRocket()">
+        <div class="title-container">
+            <div class="rocket-icon">🚀</div>
+            <h1>LUNA'S GRAND SPACE ADVENTURE</h1>
+            <p class="subtitle">For Astronaut Luna's Grand Adventure!</p>
+            <button class="launch-btn" id="launchButton">LAUNCH ROCKET! 💫</button>
+            <p id="controllerHint" style="font-size: 1.1rem; color: #80deea; margin: 15px 0 0 0;">🎮 Plug in a controller & press any button to connect!</p>
+            <div id="gamepadIndicator" style="display: none; color: #39ff14; font-size: 1.3rem; font-weight: bold; margin-top: 25px; text-shadow: 0 0 10px rgba(57,255,20,0.4); animation: pulse 1.5s infinite;">🎮 XBOX CONTROLLER CONNECTED! READY TO FLY!</div>
+        </div>
+
+        <div class="controls-guide">
+            <div class="guide-group">
+                <h3>🖱️ MOUSE CONTROLS</h3>
+                <div class="guide-item">
+                    <span>Move Mouse:</span>
+                    <span class="mouse-btn">Steer Ship 🛸</span>
+                </div>
+                <div class="guide-item">
+                    <span>Left-Click:</span>
+                    <span class="mouse-btn">Phaser Zap ⚡</span>
+                </div>
+                <div class="guide-item">
+                    <span>Right-Click:</span>
+                    <span class="mouse-btn">Boost Engine 🔥</span>
+                </div>
+            </div>
+
+            <div class="guide-group">
+                <h3>🎮 XBOX CONTROLLER</h3>
+                <div class="guide-item">
+                    <span>Left Stick:</span>
+                    <span class="mouse-btn">Steer Ship 🛸</span>
+                </div>
+                <div class="guide-item">
+                    <span>X / B / RB:</span>
+                    <span class="mouse-btn">Auto-Aim Phaser ⚡</span>
+                </div>
+                <div class="guide-item">
+                    <span>A / RT Button:</span>
+                    <span class="mouse-btn">Boost Engine 🔥</span>
+                </div>
+            </div>
+
+            <div class="guide-group touch-guide">
+                <h3>📱 TOUCH CONTROLS</h3>
+                <div class="guide-item">
+                    <span>Left Thumb:</span>
+                    <span class="mouse-btn">Steer Joy 🕹️</span>
+                </div>
+                <div class="guide-item">
+                    <span>FIRE Button:</span>
+                    <span class="mouse-btn">Phaser Zap ⚡</span>
+                </div>
+                <div class="guide-item">
+                    <span>BOOST Button:</span>
+                    <span class="mouse-btn">Boost Engine 🔥</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gameplay Screen Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Touch Controls Gamepad Overlay -->
+    <div id="touchControls">
+        <div id="joystickContainer">
+            <div id="joystickKnob"></div>
+        </div>
+        <div id="touchButtons">
+            <button id="btnBoost" class="touch-btn boost-btn">BOOST</button>
+            <button id="btnFire" class="touch-btn fire-btn">FIRE</button>
+        </div>
+    </div>
+
+    <!-- Load Game Components in proper dependency order -->
+    <script src="sounds.js"></script>
+    <script src="entities.js"></script>
+    <script src="cockpit.js"></script>
+    <script src="game.js"></script>
+
+    <script>
+        function launchRocket() {
+            // Hide the startup screen overlay
+            const overlay = document.getElementById('startOverlay');
+            overlay.classList.add('hidden');
+
+            // Request pointer lock on launch for direct FPS look controls (desktop only)
+            const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+            if (!isTouch) {
+                const canvas = document.getElementById('gameCanvas');
+                if (canvas && canvas.requestPointerLock) {
+                    canvas.requestPointerLock();
+                }
+            }
+
+            // Initialize synthesized sound effects
+            if (window.sounds) {
+                try {
+                    window.sounds.init();
+                    window.sounds.resume();
+                    
+                    // Trigger a friendly chime note sequence on launch
+                    setTimeout(() => {
+                        window.sounds.playAlienHappy();
+                    }, 200);
+                } catch (e) {
+                    console.error("Audio Context Init error:", e);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1118 @@
+// Space Rocket Game - Entities Definition
+
+class Star {
+    constructor(width, height) {
+        this.reset(width, height, true);
+    }
+
+    reset(width, height, randomZ = false) {
+        // Distribute stars in a cone shape extending ahead
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 100 + Math.random() * 800;
+        this.x = Math.cos(angle) * dist;
+        this.y = Math.sin(angle) * dist;
+        this.z = randomZ ? Math.random() * 1000 : 1000;
+        
+        // Cartoon star colors (pastel yellow, pink, cyan, white)
+        const colors = ['#ffffff', '#fff5cc', '#ffe0f0', '#e0ffff', '#e8f5e9'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.size = 1 + Math.random() * 2; // Real physical size
+    }
+
+    update(speed, dt, turnX, turnY) {
+        // Move towards camera
+        this.z -= speed * dt;
+        
+        // Influence of ship turning
+        this.x -= turnX * dt * (this.z / 1000);
+        this.y -= turnY * dt * (this.z / 1000);
+    }
+
+    draw(ctx, width, height, f, speed) {
+        if (this.z <= 10) return;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+
+        // Don't draw if outside viewport
+        if (screenX < 0 || screenX > width || screenY < 0 || screenY > height) return;
+
+        const drawSize = Math.max(0.5, this.size * scale);
+
+        ctx.fillStyle = this.color;
+        
+        // If ship is going fast, draw star trails for warp speed effect!
+        if (speed > 400) {
+            const prevZ = this.z + speed * 0.05; // Position in previous frames
+            const prevScale = f / prevZ;
+            const prevX = width / 2 + this.x * prevScale;
+            const prevY = height / 2 + this.y * prevScale;
+
+            ctx.beginPath();
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = drawSize;
+            ctx.lineCap = 'round';
+            ctx.moveTo(prevX, prevY);
+            ctx.lineTo(screenX, screenY);
+            ctx.stroke();
+        } else {
+            // Standard dot
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, drawSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+class Planet {
+    constructor(width, height) {
+        this.reset(width, height, true);
+    }
+
+    reset(width, height, randomZ = false) {
+        const angle = Math.random() * Math.PI * 2;
+        // Far off to the sides so they don't block the center view
+        const dist = 300 + Math.random() * 500;
+        this.x = Math.cos(angle) * dist;
+        this.y = Math.sin(angle) * dist;
+        this.z = randomZ ? 300 + Math.random() * 700 : 1000;
+        
+        this.radius = 80 + Math.random() * 120; // Big planet sizes
+        this.rotation = Math.random() * Math.PI * 2;
+        this.spinSpeed = (Math.random() - 0.5) * 0.1;
+
+        // Cute cartoony palettes
+        const palettes = [
+            { main: '#ff5722', shadow: '#d84315', rings: '#ffb74d', hasRings: true }, // Orange striped gas giant
+            { main: '#00bcd4', shadow: '#0097a7', rings: '#e0f7fa', hasRings: true }, // Ice blue ringed planet
+            { main: '#e91e63', shadow: '#c2185b', rings: null, hasRings: false },    // Hot pink candy planet
+            { main: '#9c27b0', shadow: '#7b1fa2', rings: '#e1bee7', hasRings: true }, // Purple mysterious planet
+            { main: '#4caf50', shadow: '#388e3c', rings: null, hasRings: false },    // Green cartoon planet
+            { main: '#ffeb3b', shadow: '#fbc02d', rings: '#fff9c4', hasRings: false } // Sweet yellow lemon planet
+        ];
+        
+        const style = palettes[Math.floor(Math.random() * palettes.length)];
+        this.color = style.main;
+        this.shadowColor = style.shadow;
+        this.hasRings = style.hasRings;
+        this.ringColor = style.rings;
+        this.ringAngle = (Math.random() - 0.5) * 0.5; // Tilting ring
+
+        // Decorative craters or stripes
+        this.styleType = Math.random() > 0.5 ? 'craters' : 'stripes';
+        this.decorations = [];
+
+        if (this.styleType === 'craters') {
+            const count = 3 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < count; i++) {
+                this.decorations.push({
+                    cx: (Math.random() - 0.5) * 0.6, // Relative to center
+                    cy: (Math.random() - 0.5) * 0.6,
+                    cr: 0.1 + Math.random() * 0.2    // Relative to radius
+                });
+            }
+        } else {
+            // Stripes
+            const count = 2 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < count; i++) {
+                this.decorations.push({
+                    y: (Math.random() - 0.5) * 0.7,
+                    h: 0.1 + Math.random() * 0.15,
+                    color: Math.random() > 0.5 ? style.shadow : '#ffffff33'
+                });
+            }
+        }
+    }
+
+    update(speed, dt, turnX, turnY) {
+        // Move towards camera very slowly
+        this.z -= speed * 0.1 * dt; 
+        
+        // Influence of ship turning
+        this.x -= turnX * dt * (this.z / 1000);
+        this.y -= turnY * dt * (this.z / 1000);
+
+        this.rotation += this.spinSpeed * dt;
+
+        // If planet is fully passed the camera, respawn far away
+        if (this.z <= 20) {
+            this.reset(null, null, false);
+        }
+    }
+
+    draw(ctx, width, height, f) {
+        if (this.z <= 20) return;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+
+        // Don't draw if outside viewport + radius
+        if (screenX + drawRadius < 0 || screenX - drawRadius > width ||
+            screenY + drawRadius < 0 || screenY - drawRadius > height) return;
+
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        ctx.rotate(this.ringAngle);
+
+        // Ring - Back side (drawn BEFORE the planet to look 3D)
+        if (this.hasRings) {
+            ctx.beginPath();
+            ctx.ellipse(0, 0, drawRadius * 1.8, drawRadius * 0.4, 0, Math.PI, 0);
+            ctx.strokeStyle = this.ringColor;
+            ctx.lineWidth = drawRadius * 0.15;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        // Draw Planet Body (Base circle)
+        ctx.beginPath();
+        ctx.arc(0, 0, drawRadius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+
+        // Clip decorations to planet body
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, drawRadius, 0, Math.PI * 2);
+        ctx.clip();
+
+        // Draw shadow layer for cartoony volume
+        ctx.beginPath();
+        ctx.arc(drawRadius * 0.3, drawRadius * 0.3, drawRadius, 0, Math.PI * 2);
+        ctx.fillStyle = this.shadowColor;
+        // Simple subtraction to get shadow on bottom right
+        ctx.fill('evenodd'); 
+
+        // Draw decorations
+        ctx.rotate(this.rotation);
+        if (this.styleType === 'craters') {
+            this.decorations.forEach(crater => {
+                ctx.beginPath();
+                ctx.arc(crater.cx * drawRadius, crater.cy * drawRadius, crater.cr * drawRadius, 0, Math.PI * 2);
+                ctx.fillStyle = this.shadowColor;
+                ctx.fill();
+                
+                // Crater rim highlight
+                ctx.beginPath();
+                ctx.arc(crater.cx * drawRadius - 1, crater.cy * drawRadius - 1, crater.cr * drawRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = '#ffffff22';
+                ctx.lineWidth = Math.max(1, drawRadius * 0.02);
+                ctx.stroke();
+            });
+        } else {
+            // Stripes
+            this.decorations.forEach(stripe => {
+                ctx.fillStyle = stripe.color;
+                ctx.fillRect(-drawRadius * 1.5, stripe.y * drawRadius, drawRadius * 3, stripe.h * drawRadius);
+            });
+        }
+        ctx.restore(); // End clipping
+
+        // Planet Outline (Very cartoony)
+        ctx.beginPath();
+        ctx.arc(0, 0, drawRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#263238'; // Dark charcoal cartoon outline
+        ctx.lineWidth = Math.max(2, drawRadius * 0.05);
+        ctx.stroke();
+
+        // Ring - Front side (drawn AFTER the planet to look 3D)
+        if (this.hasRings) {
+            ctx.beginPath();
+            ctx.ellipse(0, 0, drawRadius * 1.8, drawRadius * 0.4, 0, 0, Math.PI);
+            ctx.strokeStyle = this.ringColor;
+            ctx.lineWidth = drawRadius * 0.15;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Ring outline
+            ctx.beginPath();
+            ctx.ellipse(0, 0, drawRadius * 1.8, drawRadius * 0.4, 0, 0, Math.PI);
+            ctx.strokeStyle = '#263238';
+            ctx.lineWidth = Math.max(1, drawRadius * 0.02);
+            // Draw a slightly outer ring for outline
+            ctx.ellipse(0, 0, drawRadius * 1.8 + drawRadius * 0.07, drawRadius * 0.4 + drawRadius * 0.02, 0, 0, Math.PI);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+}
+
+class Asteroid {
+    constructor(width, height) {
+        this.reset(width, height, true);
+    }
+
+    reset(width, height, randomZ = false) {
+        // Place in front, spread out in coordinates
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 50 + Math.random() * 250;
+        this.x = Math.cos(angle) * dist;
+        this.y = Math.sin(angle) * dist;
+        this.z = randomZ ? 300 + Math.random() * 700 : 1000;
+        
+        this.radius = 25 + Math.random() * 30; // Physical radius
+        this.rotation = Math.random() * Math.PI * 2;
+        this.spinSpeed = (Math.random() - 0.5) * 1.5;
+
+        // Custom polygon vertices to make asteroids bumpy
+        this.vertexCount = 7 + Math.floor(Math.random() * 4);
+        this.vertexOffsets = [];
+        for (let i = 0; i < this.vertexCount; i++) {
+            // Vary length of each spoke by 15-30%
+            this.vertexOffsets.push(0.75 + Math.random() * 0.35);
+        }
+
+        // Cartoony asteroid colors (warm gray, purple, brownish orange)
+        const colors = [
+            { main: '#78909c', shadow: '#546e7a', craters: '#455a64' }, // Gray
+            { main: '#ab47bc', shadow: '#8e24aa', craters: '#7b1fa2' }, // Purple space crystal
+            { main: '#8d6e63', shadow: '#6d4c41', craters: '#5d4037' }  // Brown space rock
+        ];
+        const choice = colors[Math.floor(Math.random() * colors.length)];
+        this.color = choice.main;
+        this.shadowColor = choice.shadow;
+        this.craterColor = choice.craters;
+
+        // Small decorative craters
+        this.craters = [];
+        const craterCount = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < craterCount; i++) {
+            this.craters.push({
+                x: (Math.random() - 0.5) * 0.4,
+                y: (Math.random() - 0.5) * 0.4,
+                r: 0.1 + Math.random() * 0.15
+            });
+        }
+    }
+
+    update(speed, dt, turnX, turnY) {
+        this.z -= speed * dt;
+        
+        // Influence of ship turning
+        this.x -= turnX * dt * (this.z / 1000);
+        this.y -= turnY * dt * (this.z / 1000);
+
+        this.rotation += this.spinSpeed * dt;
+    }
+
+    draw(ctx, width, height, f) {
+        if (this.z <= 5) return;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+
+        // Outside boundary? Skip
+        if (screenX + drawRadius < -100 || screenX - drawRadius > width + 100 ||
+            screenY + drawRadius < -100 || screenY - drawRadius > height + 100) return;
+
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        ctx.rotate(this.rotation);
+
+        // Draw main body shape
+        ctx.beginPath();
+        for (let i = 0; i < this.vertexCount; i++) {
+            const angle = (i / this.vertexCount) * Math.PI * 2;
+            const dist = drawRadius * this.vertexOffsets[i];
+            const vx = Math.cos(angle) * dist;
+            const vy = Math.sin(angle) * dist;
+            if (i === 0) ctx.moveTo(vx, vy);
+            else ctx.lineTo(vx, vy);
+        }
+        ctx.closePath();
+        ctx.fillStyle = this.color;
+        ctx.fill();
+
+        // Dark side shading (half of the rock in shadow)
+        ctx.save();
+        // Setup clip inside the asteroid body
+        ctx.clip();
+        
+        // Shadow drawing
+        ctx.beginPath();
+        ctx.arc(drawRadius * 0.2, drawRadius * 0.2, drawRadius * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = this.shadowColor;
+        ctx.fill('evenodd');
+
+        // Draw craters
+        this.craters.forEach(crater => {
+            ctx.beginPath();
+            ctx.arc(crater.x * drawRadius, crater.y * drawRadius, crater.r * drawRadius, 0, Math.PI * 2);
+            ctx.fillStyle = this.craterColor;
+            ctx.fill();
+
+            // Crater inner highlight
+            ctx.beginPath();
+            ctx.arc(crater.x * drawRadius - 1, crater.y * drawRadius - 1, crater.r * drawRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffffff15';
+            ctx.lineWidth = Math.max(1, drawRadius * 0.02);
+            ctx.stroke();
+        });
+
+        ctx.restore();
+
+        // Thick outline
+        ctx.beginPath();
+        for (let i = 0; i < this.vertexCount; i++) {
+            const angle = (i / this.vertexCount) * Math.PI * 2;
+            const dist = drawRadius * this.vertexOffsets[i];
+            const vx = Math.cos(angle) * dist;
+            const vy = Math.sin(angle) * dist;
+            if (i === 0) ctx.moveTo(vx, vy);
+            else ctx.lineTo(vx, vy);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = Math.max(2, drawRadius * 0.08);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // Detect if mouse phaser click hits this asteroid
+    checkHit(mx, my, width, height, f) {
+        if (this.z <= 10) return false;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+
+        // Simple circle collision with the phaser coordinate
+        const dx = mx - screenX;
+        const dy = my - screenY;
+        return (dx * dx + dy * dy) < (drawRadius * drawRadius);
+    }
+}
+
+class AlienShip {
+    constructor(width, height) {
+        this.reset(width, height, true);
+    }
+
+    reset(width, height, randomZ = false) {
+        // Spawn ahead, but off center to let it drift across
+        this.x = (Math.random() - 0.5) * 300;
+        this.y = (Math.random() - 0.5) * 150;
+        this.z = randomZ ? 400 + Math.random() * 500 : 1000;
+        
+        this.radius = 35; // Size of ship
+        this.color = ['#00e676', '#ff1744', '#2979ff', '#ffea00'][Math.floor(Math.random() * 4)]; // Neon colors
+        this.domeColor = 'rgba(128, 222, 234, 0.6)'; // Translucent cyan
+
+        // Navigation path parameters (aliens wander around playfully)
+        this.t = Math.random() * 100;
+        this.driftSpeed = 0.5 + Math.random() * 1.5;
+        this.phaseOffset = Math.random() * Math.PI * 2;
+
+        this.lightsColor = '#ffff00';
+        this.lightsTimer = 0;
+
+        // Interactive States
+        this.state = 'normal'; // 'normal', 'bubble'
+        this.bubbleTimer = 0;
+        this.spinAngle = 0;
+        this.spinSpeed = 0;
+    }
+
+    update(speed, dt, turnX, turnY) {
+        this.t += dt * this.driftSpeed;
+        this.lightsTimer += dt;
+        
+        // Slowly float towards the player, but stay floating longer than asteroids
+        this.z -= speed * 0.6 * dt;
+
+        // Add some playful floating motion (sine wave curves)
+        if (this.state === 'normal') {
+            this.x += Math.sin(this.t + this.phaseOffset) * 50 * dt;
+            this.y += Math.cos(this.t * 0.8) * 30 * dt;
+        } else if (this.state === 'bubble') {
+            // Spin happily inside the bubble and drift upward
+            this.spinAngle += this.spinSpeed * dt;
+            this.y -= 40 * dt; // Float up!
+            this.bubbleTimer -= dt;
+            if (this.bubbleTimer <= 0) {
+                // Happy warp away! (instantly trigger respawn far away)
+                this.reset(null, null, false);
+            }
+        }
+
+        // Steer offsets
+        this.x -= turnX * dt * (this.z / 1000);
+        this.y -= turnY * dt * (this.z / 1000);
+
+        // Flashing lights
+        if (this.lightsTimer > 0.15) {
+            this.lightsColor = this.lightsColor === '#ffff00' ? '#ff3d00' : '#ffff00';
+            this.lightsTimer = 0;
+        }
+    }
+
+    draw(ctx, width, height, f) {
+        if (this.z <= 10) return;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const r = this.radius * scale;
+
+        // Skip drawing if way offscreen
+        if (screenX + r < -100 || screenX - r > width + 100 ||
+            screenY + r < -100 || screenY - r > height + 100) return;
+
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        
+        // Rotate alien if spinning (when hit)
+        if (this.state === 'bubble') {
+            ctx.rotate(this.spinAngle);
+        }
+
+        // Draw Cute Alien UFO
+        
+        // 1. Alien Cockpit Dome
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.1, r * 0.5, Math.PI, 0);
+        ctx.fillStyle = this.domeColor;
+        ctx.fill();
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = Math.max(1.5, r * 0.05);
+        ctx.stroke();
+
+        // 2. Cute Little Alien inside
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.1, r * 0.5, Math.PI, 0);
+        ctx.clip(); // clip to dome
+        
+        // Draw head
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.15, r * 0.25, 0, Math.PI * 2);
+        ctx.fillStyle = '#81c784'; // Light green alien
+        ctx.fill();
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = Math.max(1, r * 0.03);
+        ctx.stroke();
+
+        // Cute alien eyes
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-r * 0.08, -r * 0.18, r * 0.07, 0, Math.PI * 2);
+        ctx.arc(r * 0.08, -r * 0.18, r * 0.07, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Pupils looking at player
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(-r * 0.07, -r * 0.18, r * 0.03, 0, Math.PI * 2);
+        ctx.arc(r * 0.09, -r * 0.18, r * 0.03, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cute smiling mouth
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.11, r * 0.06, 0, Math.PI);
+        ctx.strokeStyle = '#263238';
+        ctx.stroke();
+
+        ctx.restore();
+
+        // 3. UFO Flying Saucer Metal Rim (Main saucer ring)
+        ctx.beginPath();
+        ctx.ellipse(0, r * 0.1, r, r * 0.35, 0, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = Math.max(2, r * 0.08);
+        ctx.stroke();
+
+        // 4. Highlight stripe on saucer for cartoony shine
+        ctx.beginPath();
+        ctx.ellipse(0, r * 0.05, r * 0.85, r * 0.15, 0, Math.PI, 0);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = Math.max(1, r * 0.04);
+        ctx.stroke();
+
+        // 5. Flashing Under-Lights
+        const lightPositions = [-0.6, -0.2, 0.2, 0.6];
+        lightPositions.forEach(pos => {
+            ctx.beginPath();
+            ctx.arc(r * pos, r * 0.18, r * 0.08, 0, Math.PI * 2);
+            ctx.fillStyle = this.lightsColor;
+            ctx.fill();
+            ctx.strokeStyle = '#263238';
+            ctx.lineWidth = Math.max(1, r * 0.03);
+            ctx.stroke();
+        });
+
+        ctx.restore();
+
+        // Draw a cute rainbow bubble around the alien if tagged/bubble state
+        if (this.state === 'bubble') {
+            ctx.save();
+            ctx.translate(screenX, screenY);
+            
+            // Pulsing rainbow border
+            const bubblePulse = 1 + Math.sin(Date.now() * 0.01) * 0.05;
+            const bubbleRadius = r * 1.3 * bubblePulse;
+
+            // Shiny bubble gradient
+            const grad = ctx.createRadialGradient(-bubbleRadius*0.3, -bubbleRadius*0.3, bubbleRadius*0.1, 0, 0, bubbleRadius);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+            grad.addColorStop(0.5, 'rgba(255, 200, 255, 0.25)');
+            grad.addColorStop(0.8, 'rgba(128, 222, 234, 0.3)');
+            grad.addColorStop(1, 'rgba(233, 30, 99, 0.45)'); // pink bubble rim
+
+            ctx.beginPath();
+            ctx.arc(0, 0, bubbleRadius, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Rainbow outline
+            ctx.beginPath();
+            ctx.arc(0, 0, bubbleRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = Math.max(2, r * 0.06);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+    }
+
+    // Detect laser hit
+    checkHit(mx, my, width, height, f) {
+        if (this.z <= 10 || this.state !== 'normal') return false;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const r = this.radius * scale;
+
+        const dx = mx - screenX;
+        const dy = my - screenY;
+        return (dx * dx + dy * dy) < (r * r * 1.2); // Slightly generous hitbox
+    }
+
+    // Wrap the alien in a friendly tag bubble
+    capture() {
+        this.state = 'bubble';
+        this.bubbleTimer = 2.0; // Stay on screen spinning for 2 seconds
+        this.spinSpeed = Math.PI * 3; // Fast spin!
+    }
+}
+
+class PhaserBeam {
+    constructor(mx, my, screenWidth, screenHeight, colorOverride = null, startRatio = null) {
+        this.endX = mx;
+        this.endY = my;
+
+        if (colorOverride && startRatio !== null) {
+            this.isWavy = true;
+            this.color = colorOverride;
+            // Laser fires from specific bottom ratio to target (supports fan layout)
+            this.startX1 = screenWidth * startRatio;
+            this.startY1 = screenHeight;
+            
+            // Linger slightly longer for wavy ripple effect
+            this.life = 0.22;
+            this.maxLife = 0.22;
+        } else {
+            this.isWavy = false;
+            // Laser fires from bottom corners of the cockpit screen to the target
+            this.startX1 = screenWidth * 0.25;
+            this.startY1 = screenHeight;
+            
+            this.startX2 = screenWidth * 0.75;
+            this.startY2 = screenHeight;
+
+            this.life = 0.15;
+            this.maxLife = 0.15;
+            
+            if (colorOverride) {
+                this.color = colorOverride;
+            } else {
+                // Random bright neon laser colors (cyan, lime, magenta, yellow)
+                const colors = ['#00ffff', '#39ff14', '#ff007f', '#ffff00', '#ff00ff'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+        }
+    }
+
+    update(dt) {
+        this.life -= dt;
+    }
+
+    draw(ctx) {
+        if (this.life <= 0) return;
+
+        const alpha = this.life / this.maxLife;
+        
+        if (this.isWavy) {
+            this.drawSingleWavyBeam(ctx, this.startX1, this.startY1, this.endX, this.endY, alpha);
+            return;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        
+        // Outer glowing line
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = this.color;
+        
+        // Beam 1 (Left cannon)
+        ctx.beginPath();
+        ctx.moveTo(this.startX1, this.startY1);
+        ctx.lineTo(this.endX, this.endY);
+        ctx.stroke();
+
+        // Beam 2 (Right cannon)
+        ctx.beginPath();
+        ctx.moveTo(this.startX2, this.startY2);
+        ctx.lineTo(this.endX, this.endY);
+        ctx.stroke();
+
+        // Inner white hot core
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#ffffff';
+        
+        ctx.beginPath();
+        ctx.moveTo(this.startX1, this.startY1);
+        ctx.lineTo(this.endX, this.endY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(this.startX2, this.startY2);
+        ctx.lineTo(this.endX, this.endY);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    drawSingleWavyBeam(ctx, x1, y1, x2, y2, alpha) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        
+        const steps = Math.floor(distance / 12);
+        
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        const timePhase = this.life * 45;
+        
+        // 1. Draw outer colored glow wave
+        ctx.lineWidth = 12;
+        ctx.strokeStyle = this.color;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            let px = x1 + dx * t;
+            let py = y1 + dy * t;
+            
+            // Perpendicular sine wave offset (0 offset at start and target end points)
+            const waveOffset = Math.sin(t * Math.PI * 5.0 - timePhase) * 16 * Math.sin(t * Math.PI);
+            px += Math.cos(angle + Math.PI / 2) * waveOffset;
+            py += Math.sin(angle + Math.PI / 2) * waveOffset;
+            
+            if (i === 0) {
+                ctx.moveTo(px, py);
+            } else {
+                ctx.lineTo(px, py);
+            }
+        }
+        ctx.stroke();
+        
+        // 2. Draw inner white-hot core
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.globalAlpha = alpha * 0.95;
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            let px = x1 + dx * t;
+            let py = y1 + dy * t;
+            const waveOffset = Math.sin(t * Math.PI * 5.0 - timePhase) * 16 * Math.sin(t * Math.PI);
+            px += Math.cos(angle + Math.PI / 2) * waveOffset;
+            py += Math.sin(angle + Math.PI / 2) * waveOffset;
+            
+            if (i === 0) {
+                ctx.moveTo(px, py);
+            } else {
+                ctx.lineTo(px, py);
+            }
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, z, color, sizeMultiplier = 1.0, speedMultiplier = 1.0, type = 'default') {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.type = type;
+        
+        // Spread velocities (slower for smoke, none for expanding rings)
+        let baseSpeed = 200;
+        if (type === 'smoke') baseSpeed = 110;
+        if (type === 'ring') baseSpeed = 0;
+        
+        this.vx = (Math.random() - 0.5) * baseSpeed * speedMultiplier;
+        this.vy = (Math.random() - 0.5) * baseSpeed * speedMultiplier;
+        this.vz = (Math.random() - 0.5) * (baseSpeed / 2) * speedMultiplier;
+        
+        this.radius = (3 + Math.random() * 5) * sizeMultiplier;
+        if (type === 'smoke') this.radius = (14 + Math.random() * 16) * sizeMultiplier;
+        if (type === 'ring') this.radius = 8 * sizeMultiplier;
+        
+        this.color = color;
+        this.life = (0.4 + Math.random() * 0.4) * sizeMultiplier;
+        if (type === 'ring') this.life = 0.35 * sizeMultiplier;
+        this.maxLife = this.life;
+    }
+
+    update(speed, dt, turnX, turnY) {
+        if (this.type === 'ring') {
+            // Rapid shockwave expansion
+            this.radius += dt * 280 * (this.maxLife / 0.35);
+        } else if (this.type === 'smoke') {
+            // Smoke puffs expand slightly and slow down
+            this.radius += dt * 20;
+            this.vx *= Math.pow(0.08, dt);
+            this.vy *= Math.pow(0.08, dt);
+        }
+        
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.z += this.vz * dt;
+        this.z -= speed * dt;
+        this.x -= turnX * dt * (this.z / 1000);
+        this.y -= turnY * dt * (this.z / 1000);
+        this.life -= dt;
+    }
+
+    draw(ctx, width, height, f) {
+        if (this.z <= 5 || this.life <= 0) return;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+        const alpha = this.life / this.maxLife;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        
+        if (this.type === 'ring') {
+            // Expanding shockwave ring (flat outline)
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = Math.max(3, 9 * scale * alpha);
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, drawRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // White highlight core ring
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = Math.max(1, 3 * scale * alpha);
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, drawRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (this.type === 'smoke') {
+            // Fluffy cartoon smoke cloud with thick outline
+            ctx.fillStyle = this.color;
+            ctx.strokeStyle = '#050505';
+            ctx.lineWidth = Math.max(2, 4.5 * scale);
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, drawRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else if (this.type === 'sparkle') {
+            // 4-point cartoon star vector
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#050505';
+            ctx.lineWidth = Math.max(1.5, 2.5 * scale);
+            ctx.beginPath();
+            ctx.moveTo(screenX, screenY - drawRadius);
+            ctx.quadraticCurveTo(screenX, screenY, screenX + drawRadius, screenY);
+            ctx.quadraticCurveTo(screenX, screenY, screenX, screenY + drawRadius);
+            ctx.quadraticCurveTo(screenX, screenY, screenX - drawRadius, screenY);
+            ctx.quadraticCurveTo(screenX, screenY, screenX, screenY - drawRadius);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // Default cartoon chunky debris
+            ctx.fillStyle = this.color;
+            ctx.strokeStyle = '#050505';
+            ctx.lineWidth = Math.max(1.5, 3.5 * scale);
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, drawRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+
+// Make entities globally accessible
+window.Star = Star;
+window.Planet = Planet;
+window.Asteroid = Asteroid;
+window.AlienShip = AlienShip;
+window.PhaserBeam = PhaserBeam;
+window.Particle = Particle;
+
+class Confetti {
+    constructor(width, height) {
+        // Spawn at the center of the screen
+        this.x = width / 2;
+        this.y = height / 2;
+        this.w = 8 + Math.random() * 8;
+        this.h = 12 + Math.random() * 8;
+        
+        // Explode outward radially in all directions
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 250 + Math.random() * 450;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        
+        const colors = ['#ff007f', '#00f6ff', '#ffeb00', '#39ff14', '#e040fb'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.angle = Math.random() * Math.PI;
+        this.spinSpeed = (Math.random() - 0.5) * 8;
+        this.active = true;
+    }
+    update(dt, width, height) {
+        // gravity pulls confetti down
+        this.vy += 300 * dt;
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.angle += this.spinSpeed * dt;
+        
+        // Air friction decays horizontal velocity
+        this.vx *= 0.98;
+        
+        // Deactivate when leaving viewport
+        if (this.x < -50 || this.x > width + 50 || this.y > height + 50) {
+            this.active = false;
+        }
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
+        ctx.restore();
+    }
+}
+
+class SpaceWhale {
+    constructor() {
+        this.reset();
+    }
+    reset(width = 1920, focalLength = 300) {
+        // Spawns very far away (z = 2400)
+        this.z = 2400;
+        const scale = focalLength / this.z;
+        
+        // Start completely off-screen left, dynamically calculated based on screen width
+        const startX = -(width / 2 + 1000) / scale;
+        this.x = startX;
+        
+        // Float high in space
+        this.y = -80;
+        
+        // Horizontal speed crossing left to right (takes exactly 12 seconds to cross)
+        this.vx = (width + 2000) / scale / 12.0;
+        this.vy = 5;
+        this.vz = 0; // doesn't move towards camera on its own
+        
+        this.angle = 0.04; // slight upward tilt
+        this.swimCycle = Math.random() * Math.PI * 2;
+        this.eyeWink = false;
+        
+        // Rainbow trail coordinate history
+        this.trail = [];
+    }
+    update(speed, dt, turnX, turnY, width, focalLength) {
+        // Majestic slow tail wiggle
+        this.swimCycle += dt * 3.0;
+        
+        // Extremely slow forward approach (only moves forward at 2% of player speed)
+        this.z -= speed * 0.02 * dt;
+        
+        // Move horizontally
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        
+        // Parallax steering (scaled slow since it is far away)
+        this.x -= turnX * dt * (this.z / 2400);
+        this.y -= turnY * dt * (this.z / 2400);
+        
+        // Track the wiggling tail position in 3D world space
+        const wiggle = Math.sin(this.swimCycle) * 120;
+        const tx = this.x - 900 * Math.cos(this.angle) - wiggle * Math.sin(this.angle);
+        const ty = this.y - 900 * Math.sin(this.angle) + wiggle * Math.cos(this.angle);
+        const tz = this.z;
+        
+        this.trail.push({ x: tx, y: ty, z: tz });
+        if (this.trail.length > 40) {
+            this.trail.shift();
+        }
+        
+        // Winking trigger when close to screen center
+        const scale = focalLength / this.z;
+        const screenX = width / 2 + this.x * scale;
+        if (screenX > width * 0.4 && screenX < width * 0.6) {
+            this.eyeWink = true;
+        } else {
+            this.eyeWink = false;
+        }
+        
+        // Reset if it crawls off-screen right
+        if (this.x * scale > width / 2 + 1000) {
+            this.reset(width, focalLength);
+        }
+    }
+    draw(ctx, width, height, focalLength) {
+        if (this.z <= 10) return;
+        
+        const scale = focalLength / this.z;
+        const sx = width / 2 + this.x * scale;
+        const sy = height / 2 + this.y * scale;
+        
+        // Giant size (1800 x 1000)
+        const w = 1800 * scale;
+        const h = 1000 * scale;
+        
+        // Draw Fading Rainbow Ribbon Trail behind the whale
+        if (this.trail.length > 1) {
+            ctx.save();
+            ctx.lineCap = 'round';
+            
+            // Fading Rainbow colors (Red, Orange, Yellow, Green, Cyan)
+            const colors = ['#ff1744', '#ff9100', '#ffea00', '#00e676', '#00e5ff'];
+            
+            colors.forEach((color, cIdx) => {
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                
+                for (let i = 0; i < this.trail.length; i++) {
+                    const pt = this.trail[i];
+                    const ptScale = focalLength / pt.z;
+                    
+                    // Stacking offset proportional to 2/3rds of body height (120px step per band)
+                    const offset = (cIdx - 2) * 120 * ptScale;
+                    
+                    const tx = width / 2 + pt.x * ptScale;
+                    const sy = height / 2 + pt.y * ptScale + offset;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(tx, sy);
+                    } else {
+                        ctx.lineTo(tx, sy);
+                    }
+                }
+                
+                // Line width is 135px at current scale, slightly larger than 120px step for solid overlap
+                ctx.lineWidth = 135 * scale;
+                ctx.globalAlpha = 0.45; // semi-translucent blend
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+        
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(this.angle);
+        
+        // Majestic slow tail wiggle
+        const wiggle = Math.sin(this.swimCycle) * 120 * scale;
+        ctx.fillStyle = '#d1c4e9'; // Soft lavender light purple
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = 14 * scale;
+        
+        // 1. Tail fin
+        ctx.beginPath();
+        ctx.moveTo(-w/2, 0);
+        ctx.quadraticCurveTo(-w/2 - 200*scale, wiggle, -w/2 - 400*scale, wiggle - 200*scale);
+        ctx.lineTo(-w/2 - 350*scale, wiggle);
+        ctx.lineTo(-w/2 - 400*scale, wiggle + 200*scale);
+        ctx.quadraticCurveTo(-w/2 - 200*scale, wiggle, -w/2, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // 2. Giant majestic body
+        ctx.fillStyle = '#b39ddb'; // Lavender body
+        ctx.beginPath();
+        ctx.ellipse(0, 0, w/2, h/2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 3. Cute pink underbelly
+        ctx.fillStyle = '#f8bbd0'; 
+        ctx.beginPath();
+        ctx.ellipse(0, h/6, w/3, h/3, 0, 0, Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 4. Side flipper
+        ctx.fillStyle = '#b39ddb';
+        ctx.beginPath();
+        ctx.ellipse(w/6, h/4, w/6, h/8, Math.PI/4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 5. Giant happy eye
+        const eyeX = w/4;
+        const eyeY = -h/8;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, 55 * scale, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 6. Pupil
+        ctx.fillStyle = '#263238';
+        if (this.eyeWink) {
+            // Friendly wink
+            ctx.beginPath();
+            ctx.arc(eyeX, eyeY + 10*scale, 35*scale, Math.PI, 0);
+            ctx.strokeStyle = '#263238';
+            ctx.lineWidth = 14*scale;
+            ctx.stroke();
+        } else {
+            // Big happy round pupil
+            ctx.beginPath();
+            ctx.arc(eyeX + 8*scale, eyeY, 28 * scale, 0, Math.PI*2);
+            ctx.fill();
+        }
+        
+        // 7. Small blowhole bubble detail
+        ctx.fillStyle = '#80deea';
+        ctx.beginPath();
+        ctx.arc(0, -h/2, 20*scale, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+}
+
+window.Confetti = Confetti;
+window.SpaceWhale = SpaceWhale;

@@ -1,0 +1,317 @@
+/* Import a cute rounded font for kids space adventure */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #060a17;
+    font-family: 'Fredoka', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Position the canvas to fill the window */
+#gameCanvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    cursor: none; /* Hide default cursor to use custom crosshair */
+}
+
+/* Cute Start Overlay Screen */
+#startOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle, rgba(16,23,53,0.95) 0%, rgba(6,10,23,0.98) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    color: #ffffff;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+    cursor: pointer;
+    text-align: center;
+}
+
+#startOverlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Interactive elements inside start overlay */
+.title-container {
+    animation: float 3s ease-in-out infinite;
+}
+
+h1 {
+    font-size: clamp(2rem, 5vw, 4.5rem);
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(45deg, #00ffff, #ff00ff, #ffea00, #39ff14);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbowText 6s ease infinite;
+    text-shadow: 0 0 20px rgba(0,255,255,0.2);
+}
+
+p.subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.8rem);
+    color: #e0f7fa;
+    margin: 0 0 40px 0;
+    font-weight: 400;
+}
+
+.rocket-icon {
+    font-size: clamp(3rem, 8vw, 6rem);
+    margin-bottom: 20px;
+    display: inline-block;
+    animation: shake 0.5s ease-in-out infinite alternate;
+}
+
+.launch-btn {
+    padding: 15px 40px;
+    font-size: clamp(1.2rem, 3vw, 2.2rem);
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+    border: 4px solid #ffffff;
+    border-radius: 50px;
+    box-shadow: 0 10px 25px rgba(255,87,34,0.4);
+    animation: pulse 1.8s infinite;
+    transition: transform 0.2s;
+}
+
+.launch-btn:hover {
+    transform: scale(1.08);
+}
+
+/* Instructions footer */
+.controls-guide {
+    position: absolute;
+    bottom: 40px;
+    display: flex;
+    gap: 40px;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: #b0bec5;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px 30px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.guide-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mouse-btn {
+    background-color: #37474f;
+    border: 2px solid #b0bec5;
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+/* Animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes shake {
+    0% { transform: rotate(-3deg) translate(-2px, 0); }
+    100% { transform: rotate(3deg) translate(2px, -2px); }
+}
+
+@keyframes rainbowText {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 87, 34, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 20px rgba(255, 87, 34, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 87, 34, 0);
+    }
+}
+
+.guide-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+.guide-group h3 {
+    margin: 0 0 5px 0;
+    font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+    color: #80deea;
+    border-bottom: 2px solid rgba(128, 222, 234, 0.2);
+    padding-bottom: 5px;
+}
+
+/* Touch Controls Gamepad Overlay */
+#touchControls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Let canvas clicks pass through */
+    z-index: 5;
+    display: none; /* Hidden by default, shown via JS on touch devices */
+}
+
+#joystickContainer {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    width: 130px;
+    height: 130px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    pointer-events: auto;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+#joystickKnob {
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, #ffffff 0%, #b0bec5 100%);
+    border: 3px solid #37474f;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    touch-action: none;
+}
+
+#touchButtons {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    display: flex;
+    gap: 25px;
+    pointer-events: auto;
+}
+
+.touch-btn {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 4px solid #ffffff;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.boost-btn {
+    background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+    box-shadow: 0 8px 20px rgba(255, 87, 34, 0.35), inset 0 4px 8px rgba(255,255,255,0.4);
+}
+
+.boost-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2);
+}
+
+.fire-btn {
+    background: linear-gradient(135deg, #00ffff 0%, #00acc1 100%);
+    box-shadow: 0 8px 20px rgba(0, 188, 212, 0.35), inset 0 4px 8px rgba(255,255,255,0.4);
+}
+
+.fire-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 4px 10px rgba(0, 188, 212, 0.2);
+}
+
+/* Responsive Scaling for Mobile Screens and Landscape Views */
+@media (max-width: 768px) or (max-height: 500px) {
+    .controls-guide {
+        position: relative;
+        bottom: auto;
+        margin-top: 15px;
+        gap: 15px;
+        padding: 10px 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .title-container h1 {
+        font-size: 2.0rem;
+    }
+    
+    .title-container p.subtitle {
+        margin-bottom: 20px;
+    }
+    
+    .rocket-icon {
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-height: 480px) {
+    #joystickContainer {
+        width: 100px;
+        height: 100px;
+        bottom: 20px;
+        left: 20px;
+    }
+    
+    #joystickKnob {
+        width: 46px;
+        height: 46px;
+    }
+    
+    #touchButtons {
+        bottom: 20px;
+        right: 20px;
+        gap: 15px;
+    }
+    
+    .touch-btn {
+        width: 75px;
+        height: 75px;
+        font-size: 0.95rem;
+        border-width: 3px;
+    }
+}

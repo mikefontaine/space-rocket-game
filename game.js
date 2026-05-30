@@ -1019,54 +1019,6 @@ class Game {
             this.heading
         );
 
-        // Draw Telemetry Computer Readout (Top-Left) as a sci-fi HUD panel
-        this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 10, 20, 0.7)';
-        this.ctx.strokeStyle = '#00ffff';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.roundRect(15, 15, 260, 100, 5);
-        this.ctx.fill();
-        this.ctx.stroke();
-
-        this.ctx.fillStyle = '#00ffff';
-        this.ctx.font = 'bold 11px "Courier New", Courier, monospace';
-        this.ctx.textAlign = 'left';
-        
-        let gpInfo = "NONE";
-        let gpStick = "X:0.00 Y:0.00";
-        let gpBtns = "A:0 B:0 X:0 Y:0";
-        
-        if (this.usingTouch) {
-            gpInfo = "SCREEN JOYSTICK";
-            gpStick = `X:${this.touchStickX.toFixed(2)} Y:${this.touchStickY.toFixed(2)}`;
-            const boost = this.isAccelerating ? "1" : "0";
-            const fire = this.isTouchFiring ? "1" : "0";
-            gpBtns = `BOOST:${boost} FIRE:${fire}`;
-        } else {
-            let gp = this.activeGp;
-            if (gp) {
-                gpInfo = gp.id.substring(0, 18) + "...";
-                const sx = (gp.axes && gp.axes[0] !== undefined) ? gp.axes[0].toFixed(2) : "0.00";
-                const sy = (gp.axes && gp.axes[1] !== undefined) ? gp.axes[1].toFixed(2) : "0.00";
-                gpStick = `X:${sx} Y:${sy}`;
-                
-                const a = (gp.buttons && gp.buttons[0] && this.isButtonPressed(gp.buttons[0])) ? "1" : "0";
-                const b = (gp.buttons && gp.buttons[1] && this.isButtonPressed(gp.buttons[1])) ? "1" : "0";
-                const x = (gp.buttons && gp.buttons[2] && this.isButtonPressed(gp.buttons[2])) ? "1" : "0";
-                const y = (gp.buttons && gp.buttons[3] && this.isButtonPressed(gp.buttons[3])) ? "1" : "0";
-                gpBtns = `A:${a} B:${b} X:${x} Y:${y}`;
-            }
-        }
-
-        this.ctx.fillText(`🚀 SYSTEM TELEMETRY`, 25, 30);
-        this.ctx.fillStyle = '#80deea';
-        this.ctx.fillText(`• MODE: ${this.usingTouch ? "📱 TOUCH" : (this.usingGamepad ? "🎮 GAMEPAD" : "🖱️ MOUSE")}`, 25, 48);
-        this.ctx.fillText(`• DEVICE: ${gpInfo}`, 25, 63);
-        this.ctx.fillText(`• JOYSTICK: ${gpStick}`, 25, 78);
-        this.ctx.fillText(`• BUTTONS: ${gpBtns}`, 25, 93);
-        this.ctx.restore();
-
         // Draw targeting custom crosshair (follows mouse or lock-aim)
         this.drawCrosshair();
     }

@@ -21,7 +21,7 @@
         </div>
 
         <div class="controls-guide">
-            <div class="guide-group">
+            <div class="guide-group mouse-guide">
                 <h3>🖱️ MOUSE CONTROLS</h3>
                 <div class="guide-item">
                     <span>Move Mouse:</span>
@@ -92,13 +92,18 @@
     <script src="game.js"></script>
 
     <script>
+        // Detect touch capability and add class to body immediately on load
+        const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        if (isTouch) {
+            document.body.classList.add('touch-device');
+        }
+
         function launchRocket() {
             // Hide the startup screen overlay
             const overlay = document.getElementById('startOverlay');
             overlay.classList.add('hidden');
 
             // Request pointer lock on launch for direct FPS look controls (desktop only)
-            const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
             if (!isTouch) {
                 const canvas = document.getElementById('gameCanvas');
                 if (canvas && canvas.requestPointerLock) {

@@ -315,3 +315,45 @@ p.subtitle {
         border-width: 3px;
     }
 }
+
+/* Guide Columns Visibility Rules */
+.touch-guide {
+    display: none !important;
+}
+
+.touch-device .touch-guide {
+    display: flex !important;
+}
+
+.touch-device .mouse-guide {
+    display: none !important;
+}
+
+/* Portrait Orientation - Stack Buttons Vertically to Prevent Overlaps */
+@media (orientation: portrait) {
+    #touchButtons {
+        flex-direction: column-reverse; /* BOOST on bottom, FIRE on top */
+        bottom: 25px;
+        right: 25px;
+        gap: 15px;
+    }
+    
+    #joystickContainer {
+        bottom: 25px;
+        left: 25px;
+        width: 110px;
+        height: 110px;
+    }
+    
+    #joystickKnob {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .touch-btn {
+        width: 80px;
+        height: 80px;
+        font-size: 1.05rem;
+        border-width: 3.5px;
+    }
+}

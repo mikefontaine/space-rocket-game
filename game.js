@@ -134,6 +134,7 @@ class Game {
         this.cockpit.score = 0;
         this.cockpit.shieldVal = this.cockpit.shieldMax;
         this.cockpit.healthVal = this.cockpit.healthMax;
+        this.cockpit.shieldRechargeDelay = 0;
         this.healthCanisterTimer = 60.0;
         
         // Reset all asteroids (this ensures their health gets recalculated for the new mode!)

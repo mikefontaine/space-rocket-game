@@ -248,6 +248,35 @@ class SoundManager {
         });
     }
 
+    // Light warning alarm for shields down
+    playAlarm() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+
+        const now = this.ctx.currentTime;
+        const duration = 0.6; // 0.6 seconds warning beep
+
+        const osc = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.setValueAtTime(660, now + 0.15);
+        osc.frequency.setValueAtTime(880, now + 0.3);
+        osc.frequency.setValueAtTime(660, now + 0.45);
+
+        gainNode.gain.setValueAtTime(0.12, now);
+        gainNode.gain.setValueAtTime(0.12, now + 0.5);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+        osc.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.01);
+    }
+
     // Simple beep sound for dashboard buttons
     playBeep(pitch = 600, duration = 0.1) {
         this.init();

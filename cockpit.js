@@ -42,6 +42,7 @@ class Cockpit {
         this.healthMax = 100;
         this.healthVal = 100;
         this.healthColor = '#ff1744'; // Red hull health
+        this.shieldRechargeDelay = 0; // Delay before shield starts recovering
         this.score = 0; // Score just increases as they fly/shoot for positive reinforcement!
         this.surpriseActive = false;
         
@@ -74,8 +75,10 @@ class Cockpit {
     }
 
     update(dt, turnRateX, shieldIntensity) {
-        // Cool shield recharging (slower in Advanced Mode)
-        if (this.shieldVal < this.shieldMax) {
+        // Cool shield recharging (slower in Advanced Mode, delayed if recently broken)
+        if (this.shieldRechargeDelay > 0) {
+            this.shieldRechargeDelay -= dt;
+        } else if (this.shieldVal < this.shieldMax) {
             const rechargeRate = (window.gameMode === 'advanced') ? 1.0 : 15;
             this.shieldVal = Math.min(this.shieldMax, this.shieldVal + rechargeRate * dt);
         }
@@ -104,7 +107,18 @@ class Cockpit {
 
     triggerShieldFlash(damage = 20) {
         this.shieldFlash = 1.0;
+        
+        const hadShield = (this.shieldVal > 0);
         this.shieldVal = Math.max(0, this.shieldVal - damage); // ticks down shield
+        
+        if (this.shieldVal <= 0 && hadShield && window.gameMode === 'advanced') {
+            this.shieldRechargeDelay = 5.0; // 5 seconds delay before recharging!
+            this.addMessage("🚨 SHIELDS DOWN! ALARM!", "#ff1744");
+            if (window.sounds) {
+                sounds.playAlarm();
+            }
+        }
+        
         this.helperFace = 'dizzy';
         this.helperTimer = -1.0; // Keep dizzy face for at least 1s
     }

@@ -76,7 +76,7 @@ class Cockpit {
     update(dt, turnRateX, shieldIntensity) {
         // Cool shield recharging (slower in Advanced Mode)
         if (this.shieldVal < this.shieldMax) {
-            const rechargeRate = (window.gameMode === 'advanced') ? 3.5 : 15;
+            const rechargeRate = (window.gameMode === 'advanced') ? 1.0 : 15;
             this.shieldVal = Math.min(this.shieldMax, this.shieldVal + rechargeRate * dt);
         }
 
@@ -102,9 +102,9 @@ class Cockpit {
         this.messages = this.messages.filter(msg => msg.alpha > 0);
     }
 
-    triggerShieldFlash() {
+    triggerShieldFlash(damage = 20) {
         this.shieldFlash = 1.0;
-        this.shieldVal = Math.max(0, this.shieldVal - 20); // ticks down shield
+        this.shieldVal = Math.max(0, this.shieldVal - damage); // ticks down shield
         this.helperFace = 'dizzy';
         this.helperTimer = -1.0; // Keep dizzy face for at least 1s
     }

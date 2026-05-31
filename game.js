@@ -1057,7 +1057,7 @@ class Game {
                 if (takeDamage) {
                     const wasShieldZero = (this.cockpit.shieldVal <= 0);
 
-                    this.cockpit.triggerShieldFlash();
+                    this.cockpit.triggerShieldFlash(window.gameMode === 'advanced' ? 35 : 20);
                     this.screenShake = 22;
                     sounds.playShieldBounce();
                     this.spawnShieldHitParticles(sx, sy);

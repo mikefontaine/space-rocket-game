@@ -66,7 +66,7 @@ class Game {
         this.surpriseType = null; // Can be 'disco', 'whale', or 'phaser'
         this.surpriseNextIndex = 0; // Tracks which surprise to play next (cycles disco -> whale -> phaser)
         this.surpriseTimer = 0;
-        this.surpriseInterval = 100; // Milestone step (100 for testing, change to 1000 in prod)
+        this.surpriseInterval = 1000; // Milestone step (1000 gems milestone)
         this.surpriseTargetScore = this.surpriseInterval;
         this.confetti = [];
         this.spaceWhale = null;
@@ -88,7 +88,7 @@ class Game {
         this.activeWeapon = 'normal';
         this.weaponTimer = 0;
         this.nextUfoIsSpecial = false;
-        this.specialUfoTimer = 20 + Math.random() * 15; // Spawns first special UFO after 20-35 seconds
+        this.specialUfoTimer = 15 + Math.random() * 10; // Spawns first special UFO after 15-25 seconds
 
         // UI Cockpit Dashboard
         this.cockpit = new Cockpit();
@@ -930,7 +930,7 @@ class Game {
                 alien.reset(this.width, this.height, false, spawnSpecial);
                 if (spawnSpecial) {
                     this.nextUfoIsSpecial = false;
-                    this.specialUfoTimer = 45 + Math.random() * 20; // 45-65 seconds interval
+                    this.specialUfoTimer = 25 + Math.random() * 15; // More frequent spawns: 25-40 seconds interval
                 }
             }
         });
@@ -978,11 +978,11 @@ class Game {
                 this.surpriseType = types[this.surpriseNextIndex % types.length];
                 this.surpriseNextIndex++;
                 
-                // Whale stays for 12s, Phaser upgrade stays for 12.5s (shortened by half), Disco stays for 5s
+                // Whale stays for 12s, Phaser upgrade stays for 8.5s, Disco stays for 5s
                 if (this.surpriseType === 'whale') {
                     this.surpriseTimer = 12.0;
                 } else if (this.surpriseType === 'phaser') {
-                    this.surpriseTimer = 12.5;
+                    this.surpriseTimer = 8.5; // Shortened by 4 more seconds to limit chain reaction duration
                 } else {
                     this.surpriseTimer = 5.0;
                 }

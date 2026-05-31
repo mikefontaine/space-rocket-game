@@ -1133,17 +1133,15 @@ class Game {
             // Check firing state
             if (alien.wantsToFire) {
                 alien.wantsToFire = false;
-                // Fire rate doubled (cooldown divided by 3 total)
-                alien.fireTimer = 1.0 + Math.random() * 1.33;
+                // Fire rate increased by another 50% (cooldown divided by 1.5 again)
+                alien.fireTimer = 0.67 + Math.random() * 0.89;
                 
-                // Only increase the number of projectiles by 1 every danger level increase
-                const projCount = (window.gameMode === 'advanced') ? this.lastDangerLevel : 1;
-                for (let k = 0; k < projCount; k++) {
-                    const ox = (Math.random() - 0.5) * 45;
-                    const oy = (Math.random() - 0.5) * 25;
-                    const oz = alien.z + (Math.random() - 0.5) * 20;
-                    this.alienProjectiles.push(new AlienProjectile(alien.x + ox, alien.y + oy, oz, this.speed));
-                }
+                // Fire a single, highly aimed projectile
+                const ox = (Math.random() - 0.5) * 20;
+                const oy = (Math.random() - 0.5) * 10;
+                const oz = alien.z;
+                this.alienProjectiles.push(new AlienProjectile(alien.x + ox, alien.y + oy, oz, this.speed));
+                
                 if (window.sounds) {
                     sounds.playAlienLaser();
                 }

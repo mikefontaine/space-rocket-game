@@ -501,8 +501,8 @@ class AlienShip {
         this.lightsColor = '#ffff00';
         this.lightsTimer = 0;
 
-        // Firing behavior (Advanced Mode blasters - fire rate doubled)
-        this.fireTimer = 0.67 + Math.random() * 1.33; // initial shot delay
+        // Firing behavior (Advanced Mode blasters - fire rate increased by another 50%)
+        this.fireTimer = 0.45 + Math.random() * 0.89; // initial shot delay
         this.wantsToFire = false;
 
         // Interactive States

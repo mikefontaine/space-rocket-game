@@ -84,6 +84,9 @@ class Game {
         this.phasers = [];
         this.particles = [];
         this.alienProjectiles = [];
+        this.survivalTimer = 0;
+        this.lastDangerLevel = 1;
+        window.difficultyMultiplier = 1;
 
         // Weapon upgrades states
         this.activeWeapon = 'normal';
@@ -138,6 +141,9 @@ class Game {
         this.cockpit.shieldRechargeDelay = 0;
         this.healthCanisterTimer = 60.0;
         this.alienProjectiles = [];
+        this.survivalTimer = 0;
+        this.lastDangerLevel = 1;
+        window.difficultyMultiplier = 1;
         
         // Reset all asteroids (this ensures their health gets recalculated for the new mode!)
         this.asteroids.forEach(ast => ast.reset(this.width, this.height, true));
@@ -786,6 +792,28 @@ class Game {
             return;
         }
 
+        // Increment survival timer and calculate danger level multiplier in Advanced Mode
+        if (window.gameMode === 'advanced') {
+            this.survivalTimer += dt;
+            const currentLevel = Math.floor(this.survivalTimer / 30) + 1;
+            if (currentLevel > this.lastDangerLevel) {
+                this.lastDangerLevel = currentLevel;
+                const multiplier = Math.pow(2, currentLevel - 1);
+                window.difficultyMultiplier = multiplier;
+
+                // Visual warning notifications
+                this.cockpit.addMessage(`🚨 WARNING: DANGER LEVEL ${currentLevel}! 🚨`, "#ff1744");
+                setTimeout(() => {
+                    this.cockpit.addMessage(`⚡ ALIEN SPEED & LASERS x${multiplier}! ⚡`, "#ffea00");
+                }, 650);
+
+                if (window.sounds) {
+                    sounds.playHorn();
+                }
+                this.screenShake = Math.max(this.screenShake, 18);
+            }
+        }
+
         // Decrement phaser cooldown
         if (this.phaserCooldown > 0) {
             this.phaserCooldown -= dt;
@@ -1103,7 +1131,14 @@ class Game {
             if (alien.wantsToFire) {
                 alien.wantsToFire = false;
                 alien.fireTimer = 3.0 + Math.random() * 4.0;
-                this.alienProjectiles.push(new AlienProjectile(alien.x, alien.y, alien.z));
+                
+                const mult = (window.gameMode === 'advanced' && window.difficultyMultiplier) ? window.difficultyMultiplier : 1;
+                for (let k = 0; k < mult; k++) {
+                    const ox = (Math.random() - 0.5) * 45;
+                    const oy = (Math.random() - 0.5) * 25;
+                    const oz = alien.z + (Math.random() - 0.5) * 20;
+                    this.alienProjectiles.push(new AlienProjectile(alien.x + ox, alien.y + oy, oz));
+                }
                 if (window.sounds) {
                     sounds.playAlienLaser();
                 }

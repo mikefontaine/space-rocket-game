@@ -552,38 +552,53 @@ class AlienShip {
             if (window.gameMode === 'advanced') {
                 const dl = (window.gameInstance && window.gameInstance.lastDangerLevel) ? window.gameInstance.lastDangerLevel : 1;
                 
-                // Base wider weave distance
-                const weaveX = this.isSpecial ? 230 : 120;
-                const weaveY = this.isSpecial ? 130 : 70;
-                this.x += Math.sin(this.t * (this.isSpecial ? 1.5 : 1.0) + this.phaseOffset) * weaveX * dt;
-                this.y += Math.cos(this.t * (this.isSpecial ? 1.2 : 0.8)) * weaveY * dt;
+                // Decoupled Amplitude Weaving: derivative of sine/cosine path scaled by freq & driftSpeed
+                const freqX = this.isSpecial ? 1.5 : 1.0;
+                const freqY = this.isSpecial ? 1.2 : 0.8;
+                
+                // Wider sweeps: at least twice as far as before (decoupled from high frequency scaling)
+                const weaveX = this.isSpecial ? 450 : 250;
+                const weaveY = this.isSpecial ? 240 : 140;
+                
+                this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * weaveX * dt;
+                this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * weaveY * dt;
 
                 // Tier 2 (Levels 4-6): Superimpose circular loop spirals
                 if (dl >= 4) {
                     const spiralRad = this.isSpecial ? 120 : 80;
-                    this.x += Math.sin(this.t * 3.0) * spiralRad * dt;
-                    this.y += Math.cos(this.t * 3.0) * spiralRad * dt;
+                    const spiralFreq = 3.0;
+                    this.x += Math.cos(this.t * spiralFreq) * spiralFreq * this.driftSpeed * spiralRad * dt;
+                    this.y += -Math.sin(this.t * spiralFreq) * spiralFreq * this.driftSpeed * spiralRad * dt;
                 }
 
                 // Tier 3 (Levels 7+): Superimpose circular loops plus high-frequency zig-zag and quantum teleportation jitter
                 if (dl >= 7) {
-                    this.x += Math.cos(this.t * 7.0) * (this.isSpecial ? 250 : 150) * dt;
-                    this.y += Math.sin(this.t * 6.0) * (this.isSpecial ? 150 : 90) * dt;
+                    const zigFreqX = 7.0;
+                    const zigFreqY = 6.0;
+                    const zigX = this.isSpecial ? 250 : 150;
+                    const zigY = this.isSpecial ? 150 : 90;
+                    
+                    this.x += -Math.sin(this.t * zigFreqX) * zigFreqX * this.driftSpeed * zigX * dt;
+                    this.y += Math.cos(this.t * zigFreqY) * zigFreqY * this.driftSpeed * zigY * dt;
 
                     // Small random glitch jump/teleport (5% chance per frame)
                     if (Math.random() < 0.05) {
-                        this.x += (Math.random() - 0.5) * 40;
-                        this.y += (Math.random() - 0.5) * 20;
+                        this.x += (Math.random() - 0.5) * 60;
+                        this.y += (Math.random() - 0.5) * 30;
                     }
                 }
             } else {
-                // Child Friendly Mode: Standard slower, simple, narrower weaving
+                // Child Friendly Mode: Standard slower, simple, narrower weaving (also decoupled)
                 if (this.isSpecial) {
-                    this.x += Math.sin(this.t * 1.5 + this.phaseOffset) * 115 * dt;
-                    this.y += Math.cos(this.t * 1.2) * 65 * dt;
+                    const freqX = 1.5;
+                    const freqY = 1.2;
+                    this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * 115 * dt;
+                    this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * 65 * dt;
                 } else {
-                    this.x += Math.sin(this.t + this.phaseOffset) * 50 * dt;
-                    this.y += Math.cos(this.t * 0.8) * 30 * dt;
+                    const freqX = 1.0;
+                    const freqY = 0.8;
+                    this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * 50 * dt;
+                    this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * 30 * dt;
                 }
             }
         } else if (this.state === 'bubble') {

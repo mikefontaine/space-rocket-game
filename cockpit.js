@@ -308,14 +308,12 @@ class Cockpit {
         ctx.font = '12px "Courier New"';
         ctx.fillText("🛡️ BUBBLE SHIELD ENERGY", barX, barY - 8);
 
-        // Draw danger level tracker next to shields (Advanced Mode only)
+        // Draw danger level tracker in the console gap (Advanced Mode only)
         if (window.gameMode === 'advanced') {
             const dangerLevel = (window.gameInstance && window.gameInstance.lastDangerLevel) ? window.gameInstance.lastDangerLevel : 1;
             ctx.fillStyle = '#ff1744'; // Neon alarm red
             ctx.font = 'bold 12px "Courier New"';
-            ctx.textAlign = 'right';
-            ctx.fillText(`🚨 DANGER LVL: ${dangerLevel}`, barX + barW, barY - 8);
-            ctx.textAlign = 'left'; // Reset to left alignment
+            ctx.fillText(`🚨 DANGER LEVEL: ${dangerLevel}`, barX, barY + barH + 14);
         }
 
         // ----------------------------------------------------

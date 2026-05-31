@@ -1057,15 +1057,15 @@ class Game {
                 if (takeDamage) {
                     const wasShieldZero = (this.cockpit.shieldVal <= 0);
 
-                    this.cockpit.triggerShieldFlash(window.gameMode === 'advanced' ? 35 : 20);
+                    this.cockpit.triggerShieldFlash(window.gameMode === 'advanced' ? 70 : 40);
                     this.screenShake = 22;
                     sounds.playShieldBounce();
                     this.spawnShieldHitParticles(sx, sy);
 
                     if (window.gameMode === 'advanced') {
                         if (wasShieldZero) {
-                            this.cockpit.healthVal = Math.max(0, this.cockpit.healthVal - 25);
-                            this.cockpit.addMessage("⚠️ HULL INTEGRITY DAMAGED! -25%", "#ff1744");
+                            this.cockpit.healthVal = Math.max(0, this.cockpit.healthVal - 50);
+                            this.cockpit.addMessage("⚠️ HULL INTEGRITY DAMAGED! -50%", "#ff1744");
 
                             if (this.cockpit.healthVal <= 0) {
                                 this.triggerGameOver();

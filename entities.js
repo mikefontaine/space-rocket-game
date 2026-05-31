@@ -579,21 +579,15 @@ class AlienShip {
                     this.y += -Math.sin(this.t * spiralFreq) * spiralFreq * this.driftSpeed * driftSpeedMult * spiralRad * dt;
                 }
 
-                // Tier 3 (Levels 7+): Superimpose circular loops plus high-frequency zig-zag and quantum teleportation jitter
+                // Tier 3 (Levels 7+): Superimpose circular loops plus a smooth Figure-8 Lissajous evasive pattern
                 if (dl >= 7) {
-                    const zigFreqX = 7.0;
-                    const zigFreqY = 6.0;
-                    const zigX = this.isSpecial ? 40 : 25;
-                    const zigY = this.isSpecial ? 25 : 15;
+                    const figFreqX = 2.0;
+                    const figFreqY = 1.0;
+                    const figX = this.isSpecial ? 60 : 35;
+                    const figY = this.isSpecial ? 35 : 20;
                     
-                    this.x += -Math.sin(this.t * zigFreqX) * zigFreqX * this.driftSpeed * driftSpeedMult * zigX * dt;
-                    this.y += Math.cos(this.t * zigFreqY) * zigFreqY * this.driftSpeed * driftSpeedMult * zigY * dt;
-
-                    // Small random glitch jump/teleport (5% chance per frame)
-                    if (Math.random() < 0.05) {
-                        this.x += (Math.random() - 0.5) * 30;
-                        this.y += (Math.random() - 0.5) * 15;
-                    }
+                    this.x += Math.cos(this.t * figFreqX) * figFreqX * this.driftSpeed * driftSpeedMult * figX * dt;
+                    this.y += Math.cos(this.t * figFreqY) * figFreqY * this.driftSpeed * driftSpeedMult * figY * dt;
                 }
             } else {
                 // Child Friendly Mode: Standard slower, simple, narrower weaving (also decoupled)

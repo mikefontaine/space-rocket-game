@@ -518,7 +518,8 @@ class AlienShip {
     }
 
     update(speed, dt, turnX, turnY) {
-        const ufoSpeedMult = (window.gameMode === 'advanced' && window.ufoSpeedMultiplier) ? window.ufoSpeedMultiplier : 1.0;
+        const globalSpeedMult = (window.gameMode === 'advanced' && window.ufoSpeedMultiplier) ? window.ufoSpeedMultiplier : 1.0;
+        const ufoSpeedMult = this.isSpecial ? 1.0 : globalSpeedMult; // Special UFO speed is constant to make it easier to hit
         this.t += dt * this.driftSpeed * ufoSpeedMult;
         this.lightsTimer += dt;
         

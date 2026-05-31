@@ -800,7 +800,7 @@ class Game {
             const currentLevel = Math.floor(this.survivalTimer / 30) + 1;
             if (currentLevel > this.lastDangerLevel) {
                 this.lastDangerLevel = currentLevel;
-                const multiplier = Math.pow(1.5, currentLevel - 1);
+                const multiplier = 1.0 + (currentLevel - 1) * 0.5;
                 window.difficultyMultiplier = multiplier;
                 window.ufoSpeedMultiplier = multiplier;
 

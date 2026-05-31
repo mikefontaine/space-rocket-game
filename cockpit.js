@@ -53,6 +53,21 @@ class Cockpit {
         // Little helper cartoon face states
         this.helperFace = 'happy';
         this.helperTimer = 0;
+
+        // Floating message banners
+        this.messages = [];
+    }
+
+    addMessage(text, color = '#ffffff') {
+        this.messages.push({
+            text: text,
+            x: (Math.random() - 0.5) * 80, // slight random drift offset
+            y: 0,
+            vy: -75, // floats up
+            alpha: 1.0,
+            color: color,
+            size: 26 + Math.floor(Math.random() * 8)
+        });
     }
 
     update(dt, turnRateX, shieldIntensity) {
@@ -74,6 +89,13 @@ class Cockpit {
             const faces = ['happy', 'wink', 'happy'];
             this.helperFace = faces[Math.floor(Math.random() * faces.length)];
         }
+
+        // Update floating messages
+        this.messages.forEach(msg => {
+            msg.y += msg.vy * dt;
+            msg.alpha -= 0.85 * dt; // Fades out completely in ~1.2s
+        });
+        this.messages = this.messages.filter(msg => msg.alpha > 0);
     }
 
     triggerShieldFlash() {
@@ -91,7 +113,7 @@ class Cockpit {
         return false;
     }
 
-    draw(ctx, width, height, isAccelerating, asteroids, aliens, heading) {
+    draw(ctx, width, height, isAccelerating, asteroids, aliens, heading, activeWeapon = 'normal', weaponTimer = 0) {
         const dashY = height * 0.77;
         const dashH = height * 0.23;
 
@@ -386,6 +408,84 @@ class Cockpit {
         ctx.textAlign = 'center';
         ctx.fillText("AI HELPER LINK", fx, faceY + 12);
         ctx.restore();
+
+        // ----------------------------------------------------
+        // 7. Active Power-Up/Weapon Upgrade Meter
+        // ----------------------------------------------------
+        if (activeWeapon && activeWeapon !== 'normal' && weaponTimer > 0) {
+            ctx.save();
+            const meterW = Math.min(width * 0.35, 300);
+            const meterH = 34;
+            const mx = width / 2 - meterW / 2;
+            const my = dashY - meterH - 12;
+
+            // Translucent glass backing
+            ctx.fillStyle = 'rgba(20, 30, 50, 0.7)';
+            ctx.strokeStyle = '#263238';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.roundRect(mx, my, meterW, meterH, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            // Choose weapon color, text, and icon
+            let weaponColor = '#ff4081';
+            let weaponText = 'BUBBLE GUM';
+            let icon = '🍬';
+            if (activeWeapon === 'star_wand') {
+                weaponColor = '#ffff00';
+                weaponText = 'STAR WAND';
+                icon = '🌟';
+            } else if (activeWeapon === 'ice_cream') {
+                weaponColor = '#00e5ff';
+                weaponText = 'FREEZE RAY';
+                icon = '🍦';
+            }
+
+            // Fill bar proportional to remaining time
+            const ratio = weaponTimer / 12.0; // 12 seconds max duration
+            const barW = (meterW - 12) * ratio;
+
+            ctx.fillStyle = weaponColor;
+            ctx.beginPath();
+            ctx.roundRect(mx + 6, my + 6, barW, meterH - 12, 4);
+            ctx.fill();
+
+            // Render weapon name & icon
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 13px "Courier New", Courier, monospace';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${icon} ${weaponText}`, mx + 16, my + meterH / 2);
+
+            // Remaining seconds
+            ctx.textAlign = 'right';
+            ctx.fillText(`${weaponTimer.toFixed(1)}s`, mx + meterW - 16, my + meterH / 2);
+
+            ctx.restore();
+        }
+
+        // ----------------------------------------------------
+        // 8. Draw Floating Cartoon Messages
+        // ----------------------------------------------------
+        if (this.messages.length > 0) {
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            this.messages.forEach(msg => {
+                ctx.globalAlpha = msg.alpha;
+                ctx.font = `bold ${msg.size}px "Arial Black", Impact, sans-serif`;
+                
+                // Thick black bubble text outline
+                ctx.strokeStyle = '#263238';
+                ctx.lineWidth = 8;
+                ctx.strokeText(msg.text, width / 2 + msg.x, height * 0.45 + msg.y);
+                
+                ctx.fillStyle = msg.color;
+                ctx.fillText(msg.text, width / 2 + msg.x, height * 0.45 + msg.y);
+            });
+            ctx.restore();
+        }
     }
 
     drawCartoonStar(ctx, x, y, size, color) {

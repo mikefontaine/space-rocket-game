@@ -258,6 +258,10 @@ class Asteroid {
         this.rotation = Math.random() * Math.PI * 2;
         this.spinSpeed = (Math.random() - 0.5) * 1.5;
 
+        // Freeze state variables
+        this.state = 'normal'; // 'normal', 'frozen'
+        this.freezeTimer = 0;
+
         // Custom polygon vertices to make asteroids bumpy
         this.vertexCount = 7 + Math.floor(Math.random() * 4);
         this.vertexOffsets = [];
@@ -290,13 +294,20 @@ class Asteroid {
     }
 
     update(speed, dt, turnX, turnY) {
-        this.z -= speed * dt;
+        if (this.state === 'frozen') {
+            this.z -= speed * 0.15 * dt; // drifts very slowly
+            this.freezeTimer -= dt;
+            if (this.freezeTimer <= 0) {
+                this.state = 'normal';
+            }
+        } else {
+            this.z -= speed * dt;
+            this.rotation += this.spinSpeed * dt;
+        }
         
         // Influence of ship turning
         this.x -= turnX * dt * (this.z / 1000);
         this.y -= turnY * dt * (this.z / 1000);
-
-        this.rotation += this.spinSpeed * dt;
     }
 
     draw(ctx, width, height, f) {
@@ -326,7 +337,19 @@ class Asteroid {
             else ctx.lineTo(vx, vy);
         }
         ctx.closePath();
-        ctx.fillStyle = this.color;
+
+        // Custom colors for ice/freeze ray state
+        let mainColor = this.color;
+        let shadowColor = this.shadowColor;
+        let craterColor = this.craterColor;
+
+        if (this.state === 'frozen') {
+            mainColor = '#e0f7fa'; // ice white
+            shadowColor = '#b2ebf2'; // cold cyan
+            craterColor = '#4dd0e1'; // deep frost
+        }
+
+        ctx.fillStyle = mainColor;
         ctx.fill();
 
         // Dark side shading (half of the rock in shadow)
@@ -337,14 +360,14 @@ class Asteroid {
         // Shadow drawing
         ctx.beginPath();
         ctx.arc(drawRadius * 0.2, drawRadius * 0.2, drawRadius * 1.1, 0, Math.PI * 2);
-        ctx.fillStyle = this.shadowColor;
+        ctx.fillStyle = shadowColor;
         ctx.fill('evenodd');
 
         // Draw craters
         this.craters.forEach(crater => {
             ctx.beginPath();
             ctx.arc(crater.x * drawRadius, crater.y * drawRadius, crater.r * drawRadius, 0, Math.PI * 2);
-            ctx.fillStyle = this.craterColor;
+            ctx.fillStyle = craterColor;
             ctx.fill();
 
             // Crater inner highlight
@@ -357,6 +380,23 @@ class Asteroid {
 
         ctx.restore();
 
+        // Extra frosty snowflake outline details if frozen
+        if (this.state === 'frozen') {
+            ctx.save();
+            ctx.strokeStyle = '#ffffffaa';
+            ctx.lineWidth = Math.max(1.5, drawRadius * 0.04);
+            ctx.beginPath();
+            // simple snowflake cross lines
+            ctx.moveTo(-drawRadius * 0.35, -drawRadius * 0.35);
+            ctx.lineTo(drawRadius * 0.35, drawRadius * 0.35);
+            ctx.moveTo(drawRadius * 0.35, -drawRadius * 0.35);
+            ctx.lineTo(-drawRadius * 0.35, drawRadius * 0.35);
+            ctx.moveTo(-drawRadius * 0.45, 0);
+            ctx.lineTo(drawRadius * 0.45, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+
         // Thick outline
         ctx.beginPath();
         for (let i = 0; i < this.vertexCount; i++) {
@@ -368,7 +408,7 @@ class Asteroid {
             else ctx.lineTo(vx, vy);
         }
         ctx.closePath();
-        ctx.strokeStyle = '#263238';
+        ctx.strokeStyle = this.state === 'frozen' ? '#00838f' : '#263238'; // cold blue outline for frozen rocks
         ctx.lineWidth = Math.max(2, drawRadius * 0.08);
         ctx.stroke();
 
@@ -610,39 +650,50 @@ class AlienShip {
 }
 
 class PhaserBeam {
-    constructor(mx, my, screenWidth, screenHeight, colorOverride = null, startRatio = null) {
+    constructor(mx, my, screenWidth, screenHeight, typeOrColor = null, startRatio = null) {
         this.endX = mx;
         this.endY = my;
+        this.type = 'normal';
+        this.color = '#00ffff';
+        this.isWavy = false;
 
-        if (colorOverride && startRatio !== null) {
-            this.isWavy = true;
-            this.color = colorOverride;
-            // Laser fires from specific bottom ratio to target (supports fan layout)
-            this.startX1 = screenWidth * startRatio;
-            this.startY1 = screenHeight;
-            
-            // Linger slightly longer for wavy ripple effect
-            this.life = 0.22;
-            this.maxLife = 0.22;
+        const weaponTypes = ['star_wand', 'bubble_gum', 'ice_cream'];
+
+        if (typeOrColor && weaponTypes.includes(typeOrColor)) {
+            this.type = typeOrColor;
+            this.life = 0.20;
+            this.maxLife = 0.20;
+        } else if (typeOrColor && (typeOrColor.startsWith('#') || typeOrColor === 'rainbow')) {
+            this.color = typeOrColor;
+            if (startRatio !== null) {
+                this.isWavy = true;
+                this.life = 0.22;
+                this.maxLife = 0.22;
+            } else {
+                this.life = 0.15;
+                this.maxLife = 0.15;
+            }
         } else {
-            this.isWavy = false;
-            // Laser fires from bottom corners of the cockpit screen to the target
-            this.startX1 = screenWidth * 0.25;
-            this.startY1 = screenHeight;
-            
-            this.startX2 = screenWidth * 0.75;
-            this.startY2 = screenHeight;
-
+            // Default random laser colors
             this.life = 0.15;
             this.maxLife = 0.15;
-            
-            if (colorOverride) {
-                this.color = colorOverride;
+            if (typeOrColor) {
+                this.color = typeOrColor;
             } else {
-                // Random bright neon laser colors (cyan, lime, magenta, yellow)
                 const colors = ['#00ffff', '#39ff14', '#ff007f', '#ffff00', '#ff00ff'];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
             }
+        }
+
+        // Setup firing positions
+        if (startRatio !== null) {
+            this.startX1 = screenWidth * startRatio;
+            this.startY1 = screenHeight;
+        } else {
+            this.startX1 = screenWidth * 0.25;
+            this.startY1 = screenHeight;
+            this.startX2 = screenWidth * 0.75;
+            this.startY2 = screenHeight;
         }
     }
 
@@ -654,6 +705,38 @@ class PhaserBeam {
         if (this.life <= 0) return;
 
         const alpha = this.life / this.maxLife;
+
+        // Custom weapon types drawing
+        if (this.type === 'star_wand') {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            this.drawStarBeam(ctx, this.startX1, this.startY1, this.endX, this.endY);
+            if (this.startX2 !== undefined) {
+                this.drawStarBeam(ctx, this.startX2, this.startY2, this.endX, this.endY);
+            }
+            ctx.restore();
+            return;
+        }
+        if (this.type === 'bubble_gum') {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            this.drawBubbleBeam(ctx, this.startX1, this.startY1, this.endX, this.endY);
+            if (this.startX2 !== undefined) {
+                this.drawBubbleBeam(ctx, this.startX2, this.startY2, this.endX, this.endY);
+            }
+            ctx.restore();
+            return;
+        }
+        if (this.type === 'ice_cream') {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            this.drawFreezeBeam(ctx, this.startX1, this.startY1, this.endX, this.endY);
+            if (this.startX2 !== undefined) {
+                this.drawFreezeBeam(ctx, this.startX2, this.startY2, this.endX, this.endY);
+            }
+            ctx.restore();
+            return;
+        }
         
         if (this.isWavy) {
             this.drawSingleWavyBeam(ctx, this.startX1, this.startY1, this.endX, this.endY, alpha);
@@ -675,10 +758,12 @@ class PhaserBeam {
         ctx.stroke();
 
         // Beam 2 (Right cannon)
-        ctx.beginPath();
-        ctx.moveTo(this.startX2, this.startY2);
-        ctx.lineTo(this.endX, this.endY);
-        ctx.stroke();
+        if (this.startX2 !== undefined) {
+            ctx.beginPath();
+            ctx.moveTo(this.startX2, this.startY2);
+            ctx.lineTo(this.endX, this.endY);
+            ctx.stroke();
+        }
 
         // Inner white hot core
         ctx.lineWidth = 4;
@@ -689,11 +774,137 @@ class PhaserBeam {
         ctx.lineTo(this.endX, this.endY);
         ctx.stroke();
 
+        if (this.startX2 !== undefined) {
+            ctx.beginPath();
+            ctx.moveTo(this.startX2, this.startY2);
+            ctx.lineTo(this.endX, this.endY);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    drawStarBeam(ctx, x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const steps = 8;
+        
+        // Glowing path
+        ctx.strokeStyle = 'rgba(255, 235, 59, 0.4)';
+        ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(this.startX2, this.startY2);
-        ctx.lineTo(this.endX, this.endY);
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
         ctx.stroke();
 
+        const colors = ['#ffff00', '#ff4081', '#00e5ff', '#39ff14', '#e040fb'];
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const px = x1 + dx * t;
+            const py = y1 + dy * t;
+            const size = (9 + Math.sin(t * Math.PI * 4.0 - this.life * 30) * 4) * (1.0 - t * 0.4);
+            const color = colors[(i + Math.floor(this.life * 10)) % colors.length];
+            this.drawSingleStar(ctx, px, py, size, color);
+        }
+    }
+
+    drawSingleStar(ctx, cx, cy, r, color) {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const a1 = (i / 5) * Math.PI * 2 - Math.PI / 2;
+            const a2 = ((i + 0.5) / 5) * Math.PI * 2 - Math.PI / 2;
+            ctx.lineTo(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r);
+            ctx.lineTo(cx + Math.cos(a2) * (r * 0.45), cy + Math.sin(a2) * (r * 0.45));
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    drawBubbleBeam(ctx, x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const steps = 7;
+
+        // Glowing pink background path
+        ctx.strokeStyle = 'rgba(248, 187, 208, 0.4)';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const px = x1 + dx * t;
+            const py = y1 + dy * t;
+            const size = (5 + t * 14) * (1.0 + Math.sin(this.life * 25 + t * 6) * 0.12);
+            
+            ctx.fillStyle = 'rgba(255, 64, 129, 0.6)';
+            ctx.strokeStyle = '#ff4081';
+            ctx.lineWidth = 2.0;
+            ctx.beginPath();
+            ctx.arc(px, py, size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // highlight glint
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(px - size * 0.35, py - size * 0.35, size * 0.22, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    drawFreezeBeam(ctx, x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        const steps = Math.floor(distance / 12);
+        
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Outer neon cyan helix
+        ctx.lineWidth = 4.5;
+        ctx.strokeStyle = '#00e5ff';
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            let px = x1 + dx * t;
+            let py = y1 + dy * t;
+            const offset = Math.sin(t * Math.PI * 8.0 - this.life * 35) * 16 * Math.sin(t * Math.PI);
+            px += Math.cos(angle + Math.PI / 2) * offset;
+            py += Math.sin(angle + Math.PI / 2) * offset;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Inner white/pale blue helix
+        ctx.lineWidth = 3.0;
+        ctx.strokeStyle = '#e0f7fa';
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            let px = x1 + dx * t;
+            let py = y1 + dy * t;
+            const offset = -Math.sin(t * Math.PI * 8.0 - this.life * 35) * 16 * Math.sin(t * Math.PI);
+            px += Math.cos(angle + Math.PI / 2) * offset;
+            py += Math.sin(angle + Math.PI / 2) * offset;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
         ctx.restore();
     }
 
@@ -769,6 +980,7 @@ class Particle {
         let baseSpeed = 200;
         if (type === 'smoke') baseSpeed = 110;
         if (type === 'ring') baseSpeed = 0;
+        if (type === 'bubble') baseSpeed = 60;
         
         this.vx = (Math.random() - 0.5) * baseSpeed * speedMultiplier;
         this.vy = (Math.random() - 0.5) * baseSpeed * speedMultiplier;
@@ -777,6 +989,7 @@ class Particle {
         this.radius = (3 + Math.random() * 5) * sizeMultiplier;
         if (type === 'smoke') this.radius = (14 + Math.random() * 16) * sizeMultiplier;
         if (type === 'ring') this.radius = 8 * sizeMultiplier;
+        if (type === 'bubble') this.radius = (12 + Math.random() * 8) * sizeMultiplier;
         
         this.color = color;
         this.life = (0.4 + Math.random() * 0.4) * sizeMultiplier;
@@ -793,6 +1006,11 @@ class Particle {
             this.radius += dt * 20;
             this.vx *= Math.pow(0.08, dt);
             this.vy *= Math.pow(0.08, dt);
+        } else if (this.type === 'bubble') {
+            // Bubble expands and slows down
+            this.radius += dt * 40;
+            this.vx *= Math.pow(0.15, dt);
+            this.vy *= Math.pow(0.15, dt);
         }
         
         this.x += this.vx * dt;
@@ -851,6 +1069,45 @@ class Particle {
             ctx.quadraticCurveTo(screenX, screenY, screenX, screenY + drawRadius);
             ctx.quadraticCurveTo(screenX, screenY, screenX - drawRadius, screenY);
             ctx.quadraticCurveTo(screenX, screenY, screenX, screenY - drawRadius);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        } else if (this.type === 'bubble') {
+            // Translucent glowing pink bubble
+            ctx.fillStyle = 'rgba(255, 64, 129, 0.4)';
+            ctx.strokeStyle = '#ff4081';
+            ctx.lineWidth = Math.max(1.5, 2.5 * scale);
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, drawRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // White glint
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(screenX - drawRadius * 0.35, screenY - drawRadius * 0.35, drawRadius * 0.22, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.type === 'snowflake') {
+            // 6-point frosty snowflake decal
+            ctx.strokeStyle = '#e0f7fa';
+            ctx.lineWidth = Math.max(1.5, 3.5 * scale * alpha);
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI;
+                ctx.moveTo(screenX - Math.cos(angle) * drawRadius, screenY - Math.sin(angle) * drawRadius);
+                ctx.lineTo(screenX + Math.cos(angle) * drawRadius, screenY + Math.sin(angle) * drawRadius);
+            }
+            ctx.stroke();
+        } else if (this.type === 'ice_crystal') {
+            // Shiny cyan diamond
+            ctx.fillStyle = '#00e5ff';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = Math.max(1, 2 * scale);
+            ctx.beginPath();
+            ctx.moveTo(screenX, screenY - drawRadius);
+            ctx.lineTo(screenX + drawRadius * 0.7, screenY);
+            ctx.lineTo(screenX, screenY + drawRadius);
+            ctx.lineTo(screenX - drawRadius * 0.7, screenY);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
@@ -1116,3 +1373,217 @@ class SpaceWhale {
 
 window.Confetti = Confetti;
 window.SpaceWhale = SpaceWhale;
+
+class PowerUp {
+    constructor(x, y, z, type) {
+        // If coordinates are provided, spawn there. Otherwise, spawn far away.
+        this.x = x !== undefined ? x : (Math.random() - 0.5) * 200;
+        this.y = y !== undefined ? y : (Math.random() - 0.5) * 100;
+        this.z = z !== undefined ? z : 1000;
+        
+        // type can be 'star_wand', 'bubble_gum', 'ice_cream'
+        this.type = type || ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
+        this.radius = 28; // physical collision radius
+        
+        this.rotation = Math.random() * Math.PI * 2;
+        this.spinSpeed = 1.0 + Math.random() * 1.5;
+        this.pulseTimer = Math.random() * Math.PI * 2;
+    }
+
+    update(speed, dt, turnX, turnY) {
+        // Float towards the player
+        this.z -= speed * 0.45 * dt;
+        
+        // Add a gentle floating wave motion
+        this.pulseTimer += dt * 3.0;
+        
+        this.rotation += this.spinSpeed * dt;
+        
+        // Influence of ship turning
+        this.x -= turnX * dt * (this.z / 1000);
+        this.y -= turnY * dt * (this.z / 1000);
+    }
+
+    draw(ctx, width, height, f) {
+        if (this.z <= 5) return;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+
+        // Skip if off-screen
+        if (screenX + drawRadius < -100 || screenX - drawRadius > width + 100 ||
+            screenY + drawRadius < -100 || screenY - drawRadius > height + 100) return;
+
+        ctx.save();
+        ctx.translate(screenX, screenY);
+
+        // Pulse size slightly for animated bubble effect
+        const pulse = 1.0 + Math.sin(this.pulseTimer) * 0.08;
+        const r = drawRadius * pulse;
+
+        // 1. Draw glowing outer bubble (Glossy pink/cyan/yellow depending on type)
+        let bubbleGlow = 'rgba(255, 64, 129, 0.4)';
+        let bubbleStroke = '#ff4081';
+        if (this.type === 'star_wand') {
+            bubbleGlow = 'rgba(255, 235, 59, 0.4)';
+            bubbleStroke = '#fdd835';
+        } else if (this.type === 'ice_cream') {
+            bubbleGlow = 'rgba(0, 229, 255, 0.4)';
+            bubbleStroke = '#00e5ff';
+        }
+
+        ctx.fillStyle = bubbleGlow;
+        ctx.strokeStyle = bubbleStroke;
+        ctx.lineWidth = Math.max(2.5, r * 0.08);
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 2. Glossy sheen highlight reflection
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(-r * 0.35, -r * 0.35, r * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. Draw the cartoon vector item inside the bubble
+        ctx.save();
+        ctx.rotate(this.rotation);
+        const itemSize = r * 0.55;
+        this.drawItem(ctx, itemSize);
+        ctx.restore();
+
+        // Draw Thick cartoon border on the bubble
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = Math.max(2, r * 0.08);
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    drawItem(ctx, size) {
+        ctx.save();
+        ctx.lineWidth = Math.max(2.0, size * 0.12);
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        if (this.type === 'star_wand') {
+            // Draw Star Wand: Magic brown/gold stick + Yellow Star head
+            // Stick
+            ctx.strokeStyle = '#8d6e63';
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.2, size * 0.6);
+            ctx.lineTo(size * 0.2, -size * 0.1);
+            ctx.stroke();
+            
+            // Twinkling Star head
+            ctx.fillStyle = '#ffeb3b';
+            ctx.strokeStyle = '#263238';
+            ctx.beginPath();
+            const cx = size * 0.2;
+            const cy = -size * 0.2;
+            const r = size * 0.55;
+            for (let i = 0; i < 5; i++) {
+                const a1 = (i / 5) * Math.PI * 2 - Math.PI / 2;
+                const a2 = ((i + 0.5) / 5) * Math.PI * 2 - Math.PI / 2;
+                ctx.lineTo(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r);
+                ctx.lineTo(cx + Math.cos(a2) * (r * 0.45), cy + Math.sin(a2) * (r * 0.45));
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        } else if (this.type === 'bubble_gum') {
+            // Draw Bubble Gum: Pink wrapped candy shape
+            const w = size * 1.1;
+            const h = size * 0.65;
+            
+            // Wrappers left/right (triangles)
+            ctx.fillStyle = '#ff80ab';
+            ctx.strokeStyle = '#263238';
+            ctx.beginPath();
+            // Left wrapper
+            ctx.moveTo(-w * 0.4, 0);
+            ctx.lineTo(-w * 0.8, -h * 0.5);
+            ctx.lineTo(-w * 0.8, h * 0.5);
+            ctx.closePath();
+            // Right wrapper
+            ctx.moveTo(w * 0.4, 0);
+            ctx.lineTo(w * 0.8, -h * 0.5);
+            ctx.lineTo(w * 0.8, h * 0.5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Center circular candy
+            ctx.fillStyle = '#ff4081';
+            ctx.beginPath();
+            ctx.arc(0, 0, w * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Candy shine stripe
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = Math.max(1.5, size * 0.08);
+            ctx.beginPath();
+            ctx.arc(0, 0, w * 0.35, Math.PI * 1.2, Math.PI * 1.5);
+            ctx.stroke();
+        } else if (this.type === 'ice_cream') {
+            // Draw Ice Cream: Brown waffle cone + Cyan ice cream scoop + Pink cherry on top
+            // Cone
+            ctx.fillStyle = '#ffb74d';
+            ctx.strokeStyle = '#263238';
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.4, -size * 0.1);
+            ctx.lineTo(size * 0.4, -size * 0.1);
+            ctx.lineTo(0, size * 0.8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Scoop 1 (bottom scoop, blue)
+            ctx.fillStyle = '#80deea';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.15, size * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Scoop 2 (top scoop, cyan/purple or pink cherry)
+            ctx.fillStyle = '#00e5ff';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.4, size * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Cherry
+            ctx.fillStyle = '#ff1744';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.75, size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    checkHit(mx, my, width, height, f) {
+        if (this.z <= 10) return false;
+
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+
+        const dx = mx - screenX;
+        const dy = my - screenY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Standard collision: check if click distance is within bubble radius
+        // Give slightly larger clickbox for younger children
+        return dist <= drawRadius * 1.35;
+    }
+}
+
+window.PowerUp = PowerUp;

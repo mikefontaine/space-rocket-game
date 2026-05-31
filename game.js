@@ -80,8 +80,14 @@ class Game {
         this.planets = [];
         this.asteroids = [];
         this.aliens = [];
+        this.powerUps = [];
         this.phasers = [];
         this.particles = [];
+
+        // Weapon upgrades states
+        this.activeWeapon = 'normal';
+        this.weaponTimer = 0;
+        this.powerUpSpawnTimer = 15 + Math.random() * 10; // Spawns first powerup after 15-25 seconds
 
         // UI Cockpit Dashboard
         this.cockpit = new Cockpit();
@@ -397,57 +403,127 @@ class Game {
                 this.phasers.push(new PhaserBeam(aimX, aimY, this.width, this.height, cfg.color, cfg.startRatio));
             });
             
-            // Check hits against asteroids
-            for (let i = 0; i < this.asteroids.length; i++) {
-                const ast = this.asteroids[i];
-                if (ast.checkHit(aimX, aimY, this.width, this.height, this.focalLength)) {
-                    // Trigger the chain reaction explosion sequence!
-                    this.triggerAsteroidExplosion(ast, false);
-                    return;
-                }
-            }
+            this.checkTargetHits(aimX, aimY);
+        } else if (this.activeWeapon === 'star_wand' && this.weaponTimer > 0) {
+            // Star Wand: fires a rapid cone-spray of 3 twinkling stars
+            sounds.playStarZap();
             
-            // Check hits against alien ships
-            for (let i = 0; i < this.aliens.length; i++) {
-                const alien = this.aliens[i];
-                if (alien.checkHit(aimX, aimY, this.width, this.height, this.focalLength)) {
-                    sounds.playAlienHappy();
-                    // Massive colorful sparkle explosion for tagging aliens
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#f48fb1', 15, 2.0, 1.8, 'sparkle');
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#80deea', 15, 2.0, 1.8, 'sparkle');
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffff00', 10, 1.8, 1.5, 'default');
-                    this.cockpit.score += 25;
-                    alien.capture();
-                    return;
-                }
-            }
+            const targets = [
+                { x: aimX, y: aimY },
+                { x: aimX - 60, y: aimY + 20 },
+                { x: aimX + 60, y: aimY + 20 }
+            ];
+
+            targets.forEach(t => {
+                this.phasers.push(new PhaserBeam(t.x, t.y, this.width, this.height, 'star_wand'));
+                this.checkTargetHits(t.x, t.y);
+            });
+        } else if (this.activeWeapon === 'bubble_gum' && this.weaponTimer > 0) {
+            // Bubble Gum: fires large Translucent pink bubbles
+            sounds.playBubblePop();
+            this.phasers.push(new PhaserBeam(aimX, aimY, this.width, this.height, 'bubble_gum'));
+            this.checkTargetHits(aimX, aimY);
+        } else if (this.activeWeapon === 'ice_cream' && this.weaponTimer > 0) {
+            // Ice Cream: fires frozen blue double-helix laser
+            sounds.playFreeze();
+            this.phasers.push(new PhaserBeam(aimX, aimY, this.width, this.height, 'ice_cream'));
+            this.checkTargetHits(aimX, aimY);
         } else {
             // Standard single phaser blast
             sounds.playPhaser();
             this.phasers.push(new PhaserBeam(aimX, aimY, this.width, this.height));
-            
-            // Check hits against asteroids
-            for (let i = 0; i < this.asteroids.length; i++) {
-                const ast = this.asteroids[i];
-                if (ast.checkHit(aimX, aimY, this.width, this.height, this.focalLength)) {
-                    this.triggerAsteroidExplosion(ast, false);
-                    return;
-                }
-            }
+            this.checkTargetHits(aimX, aimY);
+        }
+    }
 
-            // Check hits against alien ships
-            for (let i = 0; i < this.aliens.length; i++) {
-                const alien = this.aliens[i];
-                if (alien.checkHit(aimX, aimY, this.width, this.height, this.focalLength)) {
-                    sounds.playAlienHappy();
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#f48fb1', 8, 1.0, 1.0, 'default');
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#80deea', 8, 1.0, 1.0, 'sparkle');
-                    this.cockpit.score += 15;
-                    alien.capture();
-                    return;
+    checkTargetHits(tx, ty) {
+        // 1. Check hits against power-ups
+        for (let i = 0; i < this.powerUps.length; i++) {
+            const pu = this.powerUps[i];
+            if (pu.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
+                sounds.playPowerUpCollect();
+                this.activeWeapon = pu.type;
+                this.weaponTimer = 12.0; // 12 seconds duration
+                
+                // Add floating message on Cockpit
+                let msgText = "STAR WAND!";
+                let msgColor = '#ffff00';
+                if (pu.type === 'bubble_gum') {
+                    msgText = "BUBBLE GUM!";
+                    msgColor = '#ff4081';
+                } else if (pu.type === 'ice_cream') {
+                    msgText = "FREEZE RAY!";
+                    msgColor = '#00e5ff';
                 }
+                this.cockpit.addMessage(msgText, msgColor);
+                
+                // Spawn pop/collection particles
+                this.spawnExplosionParticles(pu.x, pu.y, pu.z, msgColor, 15, 1.8, 1.2, 'bubble');
+                this.spawnExplosionParticles(pu.x, pu.y, pu.z, '#ffffff', 8, 1.2, 0.8, 'sparkle');
+                
+                // Remove collected power-up
+                this.powerUps.splice(i, 1);
+                return true;
             }
         }
+
+        // 2. Check hits against asteroids
+        for (let i = 0; i < this.asteroids.length; i++) {
+            const ast = this.asteroids[i];
+            if (ast.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
+                if (this.activeWeapon === 'ice_cream' && this.weaponTimer > 0) {
+                    // Ice cream freeze ray hit
+                    if (ast.state === 'normal') {
+                        sounds.playFreeze();
+                        ast.state = 'frozen';
+                        ast.freezeTimer = 7.0; // freeze for 7 seconds
+                        this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#00e5ff', 12, 1.2, 0.8, 'snowflake');
+                    } else if (ast.state === 'frozen') {
+                        sounds.playIceShatter();
+                        // Shatter explosion!
+                        this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#e0f7fa', 20, 1.5, 1.4, 'ice_crystal');
+                        this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#00e5ff', 10, 1.0, 1.0, 'snowflake');
+                        this.cockpit.score += 15; // Shatters award more points!
+                        this.screenShake = Math.max(this.screenShake, 8);
+                        ast.reset(this.width, this.height, false);
+                    }
+                } else if (this.activeWeapon === 'bubble_gum' && this.weaponTimer > 0) {
+                    // Bubble gum launcher hit
+                    sounds.playBubblePop();
+                    // Bubble sticks, expands, pops
+                    this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff4081', 1, 3.5, 0.0, 'bubble'); // Sticky giant bubble
+                    this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff80ab', 12, 1.4, 1.3, 'bubble'); // Splat debris
+                    this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ffffff', 6, 1.0, 0.8, 'sparkle');
+                    this.cockpit.score += 8;
+                    this.screenShake = Math.max(this.screenShake, 6);
+                    ast.reset(this.width, this.height, false);
+                } else {
+                    // Standard / Surprise Rainbow Phasers
+                    this.triggerAsteroidExplosion(ast, false);
+                }
+                return true;
+            }
+        }
+
+        // 3. Check hits against alien ships
+        for (let i = 0; i < this.aliens.length; i++) {
+            const alien = this.aliens[i];
+            if (alien.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
+                sounds.playAlienHappy();
+                this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#f48fb1', 10, 1.2, 1.0, 'default');
+                this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#80deea', 10, 1.2, 1.0, 'sparkle');
+                
+                // Tagging friendly alien UFO spawns a random power-up in its place
+                const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
+                this.powerUps.push(new PowerUp(alien.x, alien.y, alien.z, pType));
+                
+                this.cockpit.score += 20;
+                alien.capture();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Handles standard and upgraded (recursive chain reaction) asteroid explosions
@@ -789,6 +865,30 @@ class Game {
         const accelFactor = (this.speed - this.speedCruising) / (this.speedBoost - this.speedCruising);
         sounds.setEngineAcceleration(accelFactor);
 
+        // Update weapon timer
+        if (this.weaponTimer > 0) {
+            this.weaponTimer -= dt;
+            if (this.weaponTimer <= 0) {
+                this.activeWeapon = 'normal';
+                this.cockpit.addMessage("WEAPON RESET", "#eceff1");
+            }
+        }
+
+        // Spawn powerups periodically
+        if (!this.surpriseActive) {
+            this.powerUpSpawnTimer -= dt;
+            if (this.powerUpSpawnTimer <= 0) {
+                this.powerUpSpawnTimer = 25 + Math.random() * 10;
+                const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
+                this.powerUps.push(new PowerUp(
+                    (Math.random() - 0.5) * 150,
+                    (Math.random() - 0.5) * 85,
+                    1000,
+                    pType
+                ));
+            }
+        }
+
         // Update all game entities
         this.stars.forEach(star => {
             star.update(this.speed, dt, this.turnX, this.turnY);
@@ -822,6 +922,12 @@ class Game {
                 alien.reset(this.width, this.height, false);
             }
         });
+
+        // Update active powerups
+        this.powerUps.forEach(pu => {
+            pu.update(this.speed, dt, this.turnX, this.turnY);
+        });
+        this.powerUps = this.powerUps.filter(pu => pu.z > 15);
 
         // Phaser beams lifetime
         this.phasers.forEach(laser => laser.update(dt));
@@ -989,6 +1095,7 @@ class Game {
         // Draw gameplay entities (Asteroids, Aliens, Phaser beams)
         this.asteroids.forEach(ast => ast.draw(this.ctx, this.width, this.height, this.focalLength));
         this.aliens.forEach(alien => alien.draw(this.ctx, this.width, this.height, this.focalLength));
+        this.powerUps.forEach(pu => pu.draw(this.ctx, this.width, this.height, this.focalLength));
         
         if (this.surpriseActive && this.surpriseType === 'whale' && this.spaceWhale) {
             this.spaceWhale.draw(this.ctx, this.width, this.height, this.focalLength);
@@ -1016,7 +1123,9 @@ class Game {
             this.isAccelerating, 
             this.asteroids, 
             this.aliens,
-            this.heading
+            this.heading,
+            this.activeWeapon,
+            this.weaponTimer
         );
 
         // Draw targeting custom crosshair (follows mouse or lock-aim)

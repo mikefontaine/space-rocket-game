@@ -559,6 +559,192 @@ class SoundManager {
         noise.stop(now + duration + 0.01);
     }
 
+    playPowerUpCollect() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+        
+        const now = this.ctx.currentTime;
+        // Rising magical bells: C5 -> E5 -> G5 -> C6 -> E6 -> G6
+        const freqs = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+        freqs.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+            
+            gain.gain.setValueAtTime(0.0, now + idx * 0.05);
+            gain.gain.linearRampToValueAtTime(0.12, now + idx * 0.05 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.20);
+            
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.start(now + idx * 0.05);
+            osc.stop(now + idx * 0.05 + 0.22);
+        });
+    }
+
+    playStarZap() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+        
+        const now = this.ctx.currentTime;
+        
+        const osc = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+        
+        osc.type = 'square';
+        // Pitch sweep from 700Hz to 1600Hz very quickly, then down to 900Hz
+        osc.frequency.setValueAtTime(700, now);
+        osc.frequency.linearRampToValueAtTime(1600, now + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.15);
+        
+        gainNode.gain.setValueAtTime(0.07, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        
+        osc.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + 0.16);
+    }
+
+    playBubblePop() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+        
+        const now = this.ctx.currentTime;
+        
+        const osc = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+        
+        osc.type = 'sine';
+        // Low rubbery sound sweeping upwards very fast (like a pop!)
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+        
+        gainNode.gain.setValueAtTime(0.18, now);
+        gainNode.gain.linearRampToValueAtTime(0.001, now + 0.08);
+        
+        osc.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + 0.09);
+    }
+
+    playFreeze() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+        
+        const now = this.ctx.currentTime;
+        const duration = 0.45;
+        
+        // High crystalline tone
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(2000, now);
+        osc.frequency.linearRampToValueAtTime(1800, now + 0.2);
+        osc.frequency.linearRampToValueAtTime(2200, now + 0.4);
+        
+        oscGain.gain.setValueAtTime(0.06, now);
+        oscGain.gain.linearRampToValueAtTime(0.001, now + duration);
+        
+        osc.connect(oscGain);
+        oscGain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+        
+        // Frost noise sweep
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(3000, now);
+        filter.frequency.exponentialRampToValueAtTime(600, now + duration);
+        filter.Q.value = 2.0;
+        
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.08, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+        
+        noise.start(now);
+        noise.stop(now + duration + 0.01);
+    }
+
+    playIceShatter() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+        
+        const now = this.ctx.currentTime;
+        
+        // Detuned high frequency chimes for glass/ice cracking
+        const freqs = [2500, 3100, 4200, 4800];
+        freqs.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            
+            osc.type = idx % 2 === 0 ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+            osc.frequency.linearRampToValueAtTime(freq * 0.7, now + 0.15 + Math.random() * 0.1);
+            
+            gain.gain.setValueAtTime(0.04, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15 + Math.random() * 0.1);
+            
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.3);
+        });
+        
+        // Fast crack sound
+        const duration = 0.15;
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(4000, now);
+        
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.12, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+        
+        noise.start(now);
+        noise.stop(now + duration + 0.01);
+    }
+
     toggleMute() {
         this.muted = !this.muted;
         if (this.muted) {

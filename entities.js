@@ -443,7 +443,7 @@ class AlienShip {
         this.z = randomZ ? 400 + Math.random() * 500 : 1000;
         
         this.isSpecial = isSpecial;
-        this.radius = isSpecial ? 48 : 35; // Slightly larger for the special power-up carrier!
+        this.radius = isSpecial ? 70 : 35; // 2x as big for the special power-up carrier!
         
         if (isSpecial) {
             this.color = '#ffd700'; // Special shimmery gold color

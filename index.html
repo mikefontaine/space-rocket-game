@@ -86,6 +86,33 @@
     <!-- Gameplay Screen Canvas -->
     <canvas id="gameCanvas"></canvas>
 
+    <!-- Game Over and High Score Overlay -->
+    <div id="gameOverOverlay" class="hidden">
+        <div class="game-over-container">
+            <h1 class="game-over-title">🚀 GAME OVER 🚀</h1>
+            <p id="gameOverScore" class="game-over-score">Score: 0 Crystals</p>
+            
+            <!-- High Score Submission Form (only visible if user qualifies) -->
+            <div id="highScoreInputContainer" class="hidden">
+                <p class="congrats-text">🎉 NEW HIGH SCORE! 🎉</p>
+                <div class="input-row">
+                    <input type="text" id="playerNameInput" placeholder="Enter Astronaut Name" maxlength="15">
+                    <button id="submitScoreBtn" onclick="submitHighScore()">SUBMIT 💫</button>
+                </div>
+            </div>
+            
+            <!-- High Scores Board -->
+            <div class="high-scores-board">
+                <h2>🏆 TOP ASTRONAUTS 🏆</h2>
+                <ol id="highScoresList">
+                    <!-- Loaded dynamically -->
+                </ol>
+            </div>
+            
+            <button class="play-again-btn" id="playAgainButton" onclick="restartGame()">PLAY AGAIN 🔄</button>
+        </div>
+    </div>
+
     <!-- Touch Controls Gamepad Overlay -->
     <div id="touchControls">
         <div id="joystickContainer">
@@ -144,6 +171,101 @@
                 } catch (e) {
                     console.error("Audio Context Init error:", e);
                 }
+            }
+        }
+
+        // --- High Score and Game Over Support Functions ---
+        const HIGH_SCORES_KEY = 'space_high_scores';
+
+        function getHighScores() {
+            try {
+                const data = localStorage.getItem(HIGH_SCORES_KEY);
+                if (data) return JSON.parse(data);
+            } catch (e) {
+                console.error("Error reading high scores:", e);
+            }
+            return [
+                { name: "Luna 👧", score: 1000 },
+                { name: "Captain Mike 👨‍🚀", score: 750 },
+                { name: "Robot Helper 🤖", score: 500 },
+                { name: "Alien Pip 👽", score: 250 },
+                { name: "Space Whale 🐳", score: 100 }
+            ];
+        }
+
+        function saveHighScores(scores) {
+            localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores));
+        }
+
+        function checkQualifiesForHighScore(score) {
+            const scores = getHighScores();
+            if (scores.length < 10) return true;
+            return score > scores[scores.length - 1].score;
+        }
+
+        function filterProfanity(name) {
+            const badWords = ['fuck', 'shit', 'ass', 'bitch', 'crap', 'bastard', 'dick', 'pussy', 'cunt', 'whore', 'arse', 'cock', 'fag', 'slut', 'tit', 'boob', 'wank'];
+            let filtered = name.trim();
+            if (filtered.length > 15) {
+                filtered = filtered.substring(0, 15);
+            }
+            const lowerName = filtered.toLowerCase();
+            for (let word of badWords) {
+                if (lowerName.includes(word)) {
+                    const regex = new RegExp(word, 'gi');
+                    filtered = filtered.replace(regex, '🚀');
+                }
+            }
+            return filtered;
+        }
+
+        function addHighScore(name, score) {
+            let scores = getHighScores();
+            const cleanName = filterProfanity(name);
+            scores.push({ name: cleanName, score: score });
+            scores.sort((a, b) => b.score - a.score);
+            if (scores.length > 10) {
+                scores = scores.slice(0, 10);
+            }
+            saveHighScores(scores);
+            return scores;
+        }
+
+        function submitHighScore() {
+            const input = document.getElementById('playerNameInput');
+            const name = input.value.trim() || "Anonymous Astronaut";
+            const score = window.gameInstance ? window.gameInstance.cockpit.score : 0;
+            
+            addHighScore(name, score);
+            
+            const inputContainer = document.getElementById('highScoreInputContainer');
+            inputContainer.classList.add('hidden');
+            input.value = '';
+            
+            if (window.gameInstance) {
+                window.gameInstance.refreshHighScoresBoard();
+            }
+        }
+
+        function restartGame() {
+            const gameOverOverlay = document.getElementById('gameOverOverlay');
+            if (gameOverOverlay) {
+                gameOverOverlay.classList.add('hidden');
+            }
+            
+            const startOverlay = document.getElementById('startOverlay');
+            if (startOverlay) {
+                startOverlay.classList.remove('hidden');
+            }
+            
+            if (window.gameInstance) {
+                window.gameInstance.gameOver = false;
+                window.gameInstance.speed = 100;
+                window.gameInstance.turnX = 0;
+                window.gameInstance.turnY = 0;
+                window.gameInstance.powerUps = [];
+                window.gameInstance.aliens = [];
+                window.gameInstance.asteroids.forEach(ast => ast.reset(window.gameInstance.width, window.gameInstance.height, true));
             }
         }
     </script>

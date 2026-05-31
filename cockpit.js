@@ -39,6 +39,9 @@ class Cockpit {
         this.shieldColor = '#00ffff'; // Neon cyan bubble shield
         this.shieldMax = 100;
         this.shieldVal = 100;
+        this.healthMax = 100;
+        this.healthVal = 100;
+        this.healthColor = '#ff1744'; // Red hull health
         this.score = 0; // Score just increases as they fly/shoot for positive reinforcement!
         this.surpriseActive = false;
         
@@ -71,9 +74,10 @@ class Cockpit {
     }
 
     update(dt, turnRateX, shieldIntensity) {
-        // Cool shield recharging
+        // Cool shield recharging (slower in Advanced Mode)
         if (this.shieldVal < this.shieldMax) {
-            this.shieldVal = Math.min(this.shieldMax, this.shieldVal + 15 * dt);
+            const rechargeRate = (window.gameMode === 'advanced') ? 3.5 : 15;
+            this.shieldVal = Math.min(this.shieldMax, this.shieldVal + rechargeRate * dt);
         }
 
         // Fade shield flash effect
@@ -289,6 +293,32 @@ class Cockpit {
         ctx.fillStyle = '#ffffff';
         ctx.font = '12px "Courier New"';
         ctx.fillText("🛡️ BUBBLE SHIELD ENERGY", barX, barY - 8);
+
+        // ----------------------------------------------------
+        // 5b. Ship Hull Health Bar (Advanced Mode only)
+        // ----------------------------------------------------
+        if (window.gameMode === 'advanced') {
+            const healthBarY = dashY + dashH * 0.72;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(barX, healthBarY, barW, barH);
+            ctx.strokeStyle = '#263238';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(barX, healthBarY, barW, barH);
+
+            const fillHealthW = Math.max(0, (this.healthVal / this.healthMax) * barW);
+            let hColor = '#39ff14'; // Bright green
+            if (this.healthVal <= 25) {
+                hColor = '#ff1744'; // Red
+            } else if (this.healthVal <= 50) {
+                hColor = '#ffeb3b'; // Yellow
+            }
+            ctx.fillStyle = hColor;
+            ctx.fillRect(barX + 1, healthBarY + 1, fillHealthW - 2, barH - 2);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px "Courier New"';
+            ctx.fillText("🚀 SHIP HULL HEALTH", barX, healthBarY - 8);
+        }
 
         // ----------------------------------------------------
         // 6. Translucent AI Face Screen (Upper Right Corner)

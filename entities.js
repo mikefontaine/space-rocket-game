@@ -1562,6 +1562,9 @@ class PowerUp {
         } else if (this.type === 'ice_cream') {
             bubbleGlow = 'rgba(0, 229, 255, 0.4)';
             bubbleStroke = '#00e5ff';
+        } else if (this.type === 'health_canister') {
+            bubbleGlow = 'rgba(57, 255, 20, 0.3)'; // Green glow
+            bubbleStroke = '#39ff14'; // Bright green stroke
         }
 
         ctx.fillStyle = bubbleGlow;
@@ -1694,6 +1697,21 @@ class PowerUp {
             ctx.arc(0, -size * 0.75, size * 0.15, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+        } else if (this.type === 'health_canister') {
+            // Draw Health Canister: white circular pack with a red cross inside
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#263238';
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Red cross
+            ctx.fillStyle = '#ff1744';
+            const bar = size * 0.22;
+            const len = size * 0.9;
+            ctx.fillRect(-len * 0.5, -bar * 0.5, len, bar);
+            ctx.fillRect(-bar * 0.5, -len * 0.5, bar, len);
         }
         ctx.restore();
     }

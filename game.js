@@ -89,6 +89,8 @@ class Game {
         this.weaponTimer = 0;
         this.nextUfoIsSpecial = false;
         this.specialUfoTimer = 15 + Math.random() * 10; // Spawns first special UFO after 15-25 seconds
+        this.gameOver = false;
+        this.healthCanisterTimer = 60.0;
 
         // UI Cockpit Dashboard
         this.cockpit = new Cockpit();
@@ -119,6 +121,7 @@ class Game {
         this.weaponTimer = 0;
         this.specialUfoTimer = 15 + Math.random() * 10;
         this.nextUfoIsSpecial = false;
+        this.gameOver = false;
         
         // Repopulate aliens list depending on mode
         this.aliens = [];
@@ -130,6 +133,8 @@ class Game {
         // Reset score & shield bubble
         this.cockpit.score = 0;
         this.cockpit.shieldVal = this.cockpit.shieldMax;
+        this.cockpit.healthVal = this.cockpit.healthMax;
+        this.healthCanisterTimer = 60.0;
         
         // Reset all asteroids (this ensures their health gets recalculated for the new mode!)
         this.asteroids.forEach(ast => ast.reset(this.width, this.height, true));
@@ -464,23 +469,33 @@ class Game {
             const pu = this.powerUps[i];
             if (pu.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
                 sounds.playPowerUpCollect();
-                this.activeWeapon = pu.type;
-                this.weaponTimer = 12.0; // 12 seconds duration
                 
-                // Add floating message on Cockpit
-                let msgText = "STAR WAND!";
-                let msgColor = '#ffff00';
-                if (pu.type === 'bubble_gum') {
-                    msgText = "BUBBLE GUM!";
-                    msgColor = '#ff4081';
-                } else if (pu.type === 'ice_cream') {
-                    msgText = "FREEZE RAY!";
-                    msgColor = '#00e5ff';
+                if (pu.type === 'health_canister') {
+                    // Heal player by 25%
+                    this.cockpit.healthVal = Math.min(this.cockpit.healthMax, this.cockpit.healthVal + 25);
+                    this.cockpit.addMessage("❤️ HULL INTEGRITY RESTORED +25%!", "#39ff14");
+                    
+                    // Spawn pop/collection particles (green for health)
+                    this.spawnExplosionParticles(pu.x, pu.y, pu.z, '#39ff14', 15, 1.8, 1.2, 'bubble');
+                } else {
+                    this.activeWeapon = pu.type;
+                    this.weaponTimer = 12.0; // 12 seconds duration
+                    
+                    // Add floating message on Cockpit
+                    let msgText = "STAR WAND!";
+                    let msgColor = '#ffff00';
+                    if (pu.type === 'bubble_gum') {
+                        msgText = "BUBBLE GUM!";
+                        msgColor = '#ff4081';
+                    } else if (pu.type === 'ice_cream') {
+                        msgText = "FREEZE RAY!";
+                        msgColor = '#00e5ff';
+                    }
+                    this.cockpit.addMessage(msgText, msgColor);
+                    
+                    // Spawn pop/collection particles
+                    this.spawnExplosionParticles(pu.x, pu.y, pu.z, msgColor, 15, 1.8, 1.2, 'bubble');
                 }
-                this.cockpit.addMessage(msgText, msgColor);
-                
-                // Spawn pop/collection particles
-                this.spawnExplosionParticles(pu.x, pu.y, pu.z, msgColor, 15, 1.8, 1.2, 'bubble');
                 this.spawnExplosionParticles(pu.x, pu.y, pu.z, '#ffffff', 8, 1.2, 0.8, 'sparkle');
                 
                 // Remove collected power-up
@@ -742,6 +757,17 @@ class Game {
     }
 
     update(dt) {
+        if (this.gameOver) {
+            // Game Over drift loop (only update stars and explosion particles, nothing else)
+            this.stars.forEach(star => {
+                star.update(this.speed * 0.1, dt, 0, 0); // drift slowly
+                if (star.z <= 10) star.reset(this.width, this.height, false);
+            });
+            this.particles.forEach(p => p.update(this.speed * 0.1, dt, 0, 0));
+            this.particles = this.particles.filter(p => p.life > 0 && p.z > 5);
+            return;
+        }
+
         // Decrement phaser cooldown
         if (this.phaserCooldown > 0) {
             this.phaserCooldown -= dt;
@@ -991,6 +1017,15 @@ class Game {
             }
         }
 
+        // Update health canister power-up spawning timer (Advanced Mode only)
+        if (window.gameMode === 'advanced') {
+            this.healthCanisterTimer -= dt;
+            if (this.healthCanisterTimer <= 0) {
+                this.powerUps.push(new PowerUp(undefined, undefined, 1000, 'health_canister'));
+                this.healthCanisterTimer = 60.0;
+            }
+        }
+
         // Update all game entities
         this.stars.forEach(star => {
             star.update(this.speed, dt, this.turnX, this.turnY);
@@ -1009,11 +1044,36 @@ class Game {
                 const scale = this.focalLength / ast.z;
                 const sx = this.width / 2 + ast.x * scale;
                 const sy = this.height / 2 + ast.y * scale;
+                const drawRadius = ast.radius * scale;
 
-                this.cockpit.triggerShieldFlash();
-                this.screenShake = 22;
-                sounds.playShieldBounce();
-                this.spawnShieldHitParticles(sx, sy);
+                let takeDamage = true;
+                if (window.gameMode === 'advanced') {
+                    // Check if it's visible on screen (within canvas boundaries)
+                    const isVisible = (sx + drawRadius >= 0 && sx - drawRadius <= this.width &&
+                                       sy + drawRadius >= 0 && sy - drawRadius <= this.height);
+                    takeDamage = isVisible;
+                }
+
+                if (takeDamage) {
+                    const wasShieldZero = (this.cockpit.shieldVal <= 0);
+
+                    this.cockpit.triggerShieldFlash();
+                    this.screenShake = 22;
+                    sounds.playShieldBounce();
+                    this.spawnShieldHitParticles(sx, sy);
+
+                    if (window.gameMode === 'advanced') {
+                        if (wasShieldZero) {
+                            this.cockpit.healthVal = Math.max(0, this.cockpit.healthVal - 25);
+                            this.cockpit.addMessage("⚠️ HULL INTEGRITY DAMAGED! -25%", "#ff1744");
+
+                            if (this.cockpit.healthVal <= 0) {
+                                this.triggerGameOver();
+                            }
+                        }
+                    }
+                }
+
                 ast.reset(this.width, this.height, false);
             }
         });
@@ -1310,6 +1370,61 @@ class Game {
         this.ctx.stroke();
 
         this.ctx.restore();
+    }
+
+    triggerGameOver() {
+        this.gameOver = true;
+        
+        // Hide pointer lock cursor
+        if (document.pointerLockElement) {
+            document.exitPointerLock();
+        }
+        
+        // Play massive explosion chiptune sound!
+        sounds.playExplosion();
+        // Trigger screen shake
+        this.screenShake = 40;
+        
+        // Let's spawn tons of explosion particles around the screen!
+        for (let i = 0; i < 40; i++) {
+            const rx = (Math.random() - 0.5) * 400;
+            const ry = (Math.random() - 0.5) * 200;
+            const rz = 20 + Math.random() * 200;
+            this.spawnExplosionParticles(rx, ry, rz, '#ff3d00', 2, 3.0, 2.5, 'smoke');
+            this.spawnExplosionParticles(rx, ry, rz, '#ffea00', 2, 2.0, 2.0, 'sparkle');
+        }
+        
+        // Update Game Over score text
+        const scoreVal = this.cockpit.score;
+        document.getElementById('gameOverScore').innerText = `Score: ${scoreVal} Crystals`;
+        
+        // Check if score qualifies for top 10 high scores
+        const qualifies = checkQualifiesForHighScore(scoreVal);
+        const inputContainer = document.getElementById('highScoreInputContainer');
+        if (qualifies) {
+            inputContainer.classList.remove('hidden');
+            document.getElementById('submitScoreBtn').disabled = false;
+        } else {
+            inputContainer.classList.add('hidden');
+        }
+        
+        // Display high scores list
+        this.refreshHighScoresBoard();
+        
+        // Show Game Over Overlay
+        const overlay = document.getElementById('gameOverOverlay');
+        overlay.classList.remove('hidden');
+    }
+
+    refreshHighScoresBoard() {
+        const scores = getHighScores();
+        const listEl = document.getElementById('highScoresList');
+        listEl.innerHTML = '';
+        scores.forEach((entry, idx) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="rank">#${idx+1}</span> <span class="name">${entry.name}</span> <span class="score">${entry.score} ✨</span>`;
+            listEl.appendChild(li);
+        });
     }
 
     loop() {

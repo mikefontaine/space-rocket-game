@@ -130,7 +130,7 @@ class Game {
         
         // Repopulate aliens list depending on mode
         this.aliens = [];
-        const alienCount = mode === 'advanced' ? 3 : 1;
+        const alienCount = 1; // Start with 1 alien ship in all modes
         for (let i = 0; i < alienCount; i++) {
             this.aliens.push(new AlienShip(this.width, this.height));
         }
@@ -803,6 +803,17 @@ class Game {
                 const multiplier = 1.0 + (currentLevel - 1) * 0.5;
                 window.difficultyMultiplier = multiplier;
                 window.ufoSpeedMultiplier = multiplier;
+
+                // Spawning extra alien ships: 1 starting, +1 every 3 danger levels (level 4, 7, 10...)
+                const targetAlienCount = 1 + Math.floor((currentLevel - 1) / 3);
+                if (this.aliens.length < targetAlienCount) {
+                    while (this.aliens.length < targetAlienCount) {
+                        this.aliens.push(new AlienShip(this.width, this.height));
+                    }
+                    setTimeout(() => {
+                        this.cockpit.addMessage("🛸 NEW ALIEN SHIP DETECTED! 🛸", "#80deea");
+                    }, 1300);
+                }
 
                 // Visual warning notifications
                 this.cockpit.addMessage(`🚨 WARNING: DANGER LEVEL ${currentLevel}! 🚨`, "#ff1744");

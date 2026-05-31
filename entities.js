@@ -491,8 +491,8 @@ class AlienShip {
         // Navigation path parameters (aliens wander around playfully)
         this.t = Math.random() * 100;
         if (window.gameMode === 'advanced') {
-            // Speed weaving quadrupled (doubled starting speed relative to previous commit) in advanced mode!
-            this.driftSpeed = isSpecial ? 6.4 + Math.random() * 4.0 : 4.8 + Math.random() * 5.6;
+            // Speed weaving scaled down to ~1/3 of the previous speed
+            this.driftSpeed = isSpecial ? 2.1 + Math.random() * 1.3 : 1.6 + Math.random() * 1.9;
         } else {
             this.driftSpeed = isSpecial ? 1.0 + Math.random() * 0.8 : 0.5 + Math.random() * 1.5;
         }
@@ -529,13 +529,13 @@ class AlienShip {
                 this.state = 'normal';
             }
         } else if (this.isSpecial) {
-            // Keep special ship on screen (starting speed approach quadrupled in advanced)
-            const approachMult = (window.gameMode === 'advanced') ? 0.48 : 0.12;
-            const maxZApproach = (window.gameMode === 'advanced') ? 240 : 60;
+            // Keep special ship on screen (approaches slower than normal ships to stay visible longer)
+            const approachMult = (window.gameMode === 'advanced') ? 0.25 : 0.12;
+            const maxZApproach = (window.gameMode === 'advanced') ? 90 : 60;
             this.z -= Math.min(maxZApproach, speed * approachMult) * dt;
         } else {
-            // Approach starting speed quadrupled in advanced mode
-            const zSpeed = (window.gameMode === 'advanced') ? speed * 2.4 : speed * 0.6;
+            // Approach speed in advanced mode is slightly slower than asteroids (speed * 0.8 vs speed * 1.0)
+            const zSpeed = (window.gameMode === 'advanced') ? speed * 0.8 : speed * 0.6;
             this.z -= zSpeed * dt;
         }
 

@@ -978,11 +978,11 @@ class Game {
                 this.surpriseType = types[this.surpriseNextIndex % types.length];
                 this.surpriseNextIndex++;
                 
-                // Whale stays for 12s, Phaser upgrade stays for 8.5s, Disco stays for 5s
+                // Whale stays for 12s, Phaser upgrade stays for 5.5s, Disco stays for 5s
                 if (this.surpriseType === 'whale') {
                     this.surpriseTimer = 12.0;
                 } else if (this.surpriseType === 'phaser') {
-                    this.surpriseTimer = 8.5; // Shortened by 4 more seconds to limit chain reaction duration
+                    this.surpriseTimer = 5.5; // Shortened by 3 more seconds to limit chain reaction duration
                 } else {
                     this.surpriseTimer = 5.0;
                 }

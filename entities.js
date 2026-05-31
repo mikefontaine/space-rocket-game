@@ -432,23 +432,30 @@ class Asteroid {
 }
 
 class AlienShip {
-    constructor(width, height) {
-        this.reset(width, height, true);
+    constructor(width, height, isSpecial = false) {
+        this.reset(width, height, true, isSpecial);
     }
 
-    reset(width, height, randomZ = false) {
+    reset(width, height, randomZ = false, isSpecial = false) {
         // Spawn ahead, but off center to let it drift across
         this.x = (Math.random() - 0.5) * 300;
         this.y = (Math.random() - 0.5) * 150;
         this.z = randomZ ? 400 + Math.random() * 500 : 1000;
         
-        this.radius = 35; // Size of ship
-        this.color = ['#00e676', '#ff1744', '#2979ff', '#ffea00'][Math.floor(Math.random() * 4)]; // Neon colors
-        this.domeColor = 'rgba(128, 222, 234, 0.6)'; // Translucent cyan
+        this.isSpecial = isSpecial;
+        this.radius = isSpecial ? 48 : 35; // Slightly larger for the special power-up carrier!
+        
+        if (isSpecial) {
+            this.color = '#ffd700'; // Special shimmery gold color
+            this.domeColor = 'rgba(255, 64, 129, 0.7)'; // Hot pink dome
+        } else {
+            this.color = ['#00e676', '#ff1744', '#2979ff', '#ffea00'][Math.floor(Math.random() * 4)]; // Neon colors
+            this.domeColor = 'rgba(128, 222, 234, 0.6)'; // Translucent cyan
+        }
 
         // Navigation path parameters (aliens wander around playfully)
         this.t = Math.random() * 100;
-        this.driftSpeed = 0.5 + Math.random() * 1.5;
+        this.driftSpeed = isSpecial ? 1.0 + Math.random() * 0.8 : 0.5 + Math.random() * 1.5;
         this.phaseOffset = Math.random() * Math.PI * 2;
 
         this.lightsColor = '#ffff00';
@@ -459,6 +466,8 @@ class AlienShip {
         this.bubbleTimer = 0;
         this.spinAngle = 0;
         this.spinSpeed = 0;
+        
+        this.needsReset = false; // Flag for game.js to handle capture reset
     }
 
     update(speed, dt, turnX, turnY) {
@@ -466,20 +475,31 @@ class AlienShip {
         this.lightsTimer += dt;
         
         // Slowly float towards the player, but stay floating longer than asteroids
-        this.z -= speed * 0.6 * dt;
+        if (this.isSpecial) {
+            // Keep special ship on screen for at least 15 seconds by slowing down z approach
+            this.z -= Math.min(60, speed * 0.12) * dt;
+        } else {
+            this.z -= speed * 0.6 * dt;
+        }
 
         // Add some playful floating motion (sine wave curves)
         if (this.state === 'normal') {
-            this.x += Math.sin(this.t + this.phaseOffset) * 50 * dt;
-            this.y += Math.cos(this.t * 0.8) * 30 * dt;
+            if (this.isSpecial) {
+                // Special ship weaves in a wider, more challenging figure-8 pattern
+                this.x += Math.sin(this.t * 1.5 + this.phaseOffset) * 115 * dt;
+                this.y += Math.cos(this.t * 1.2) * 65 * dt;
+            } else {
+                this.x += Math.sin(this.t + this.phaseOffset) * 50 * dt;
+                this.y += Math.cos(this.t * 0.8) * 30 * dt;
+            }
         } else if (this.state === 'bubble') {
             // Spin happily inside the bubble and drift upward
             this.spinAngle += this.spinSpeed * dt;
             this.y -= 40 * dt; // Float up!
             this.bubbleTimer -= dt;
             if (this.bubbleTimer <= 0) {
-                // Happy warp away! (instantly trigger respawn far away)
-                this.reset(null, null, false);
+                // Warp away: set needsReset flag for game.js to reset it
+                this.needsReset = true;
             }
         }
 
@@ -508,6 +528,23 @@ class AlienShip {
 
         ctx.save();
         ctx.translate(screenX, screenY);
+
+        // Draw outer glowing halo if it is the special power-up carrier UFO
+        if (this.isSpecial && this.state === 'normal') {
+            ctx.save();
+            const pulse = 1.0 + Math.sin(Date.now() * 0.009) * 0.12;
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.45)';
+            ctx.lineWidth = Math.max(5, r * 0.14 * pulse);
+            ctx.beginPath();
+            ctx.ellipse(0, r * 0.1, r * 1.15, r * 0.5, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner thinner bright gold line
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = Math.max(2, r * 0.05);
+            ctx.stroke();
+            ctx.restore();
+        }
         
         // Rotate alien if spinning (when hit)
         if (this.state === 'bubble') {

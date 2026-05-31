@@ -87,7 +87,8 @@ class Game {
         // Weapon upgrades states
         this.activeWeapon = 'normal';
         this.weaponTimer = 0;
-        this.powerUpSpawnTimer = 15 + Math.random() * 10; // Spawns first powerup after 15-25 seconds
+        this.nextUfoIsSpecial = false;
+        this.specialUfoTimer = 20 + Math.random() * 15; // Spawns first special UFO after 20-35 seconds
 
         // UI Cockpit Dashboard
         this.cockpit = new Cockpit();
@@ -510,14 +511,26 @@ class Game {
             const alien = this.aliens[i];
             if (alien.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
                 sounds.playAlienHappy();
-                this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#f48fb1', 10, 1.2, 1.0, 'default');
-                this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#80deea', 10, 1.2, 1.0, 'sparkle');
                 
-                // Tagging friendly alien UFO spawns a random power-up in its place
-                const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
-                this.powerUps.push(new PowerUp(alien.x, alien.y, alien.z, pType));
+                if (alien.isSpecial) {
+                    // Tagging special golden UFO spawns a random power-up in its place
+                    const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
+                    this.powerUps.push(new PowerUp(alien.x, alien.y, alien.z, pType));
+                    
+                    // Extra magical gold & magenta sparkles for special UFO
+                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffd700', 16, 1.5, 1.3, 'sparkle');
+                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ff4081', 10, 1.3, 1.0, 'sparkle');
+                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffffff', 8, 1.0, 0.8, 'sparkle');
+                    
+                    this.cockpit.score += 35;
+                    this.cockpit.addMessage("SPECIAL UFO!", "#ffd700");
+                } else {
+                    // Normal friendly UFO: tag sparkles only (no power-up spawn)
+                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#f48fb1', 8, 1.0, 1.0, 'default');
+                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#80deea', 8, 1.0, 1.0, 'sparkle');
+                    this.cockpit.score += 15;
+                }
                 
-                this.cockpit.score += 20;
                 alien.capture();
                 return true;
             }
@@ -874,18 +887,12 @@ class Game {
             }
         }
 
-        // Spawn powerups periodically
-        if (!this.surpriseActive) {
-            this.powerUpSpawnTimer -= dt;
-            if (this.powerUpSpawnTimer <= 0) {
-                this.powerUpSpawnTimer = 25 + Math.random() * 10;
-                const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
-                this.powerUps.push(new PowerUp(
-                    (Math.random() - 0.5) * 150,
-                    (Math.random() - 0.5) * 85,
-                    1000,
-                    pType
-                ));
+        // Update special power-up carrier UFO spawning timer
+        const hasSpecialActive = this.aliens.some(a => a.isSpecial);
+        if (!hasSpecialActive && !this.surpriseActive) {
+            this.specialUfoTimer -= dt;
+            if (this.specialUfoTimer <= 0) {
+                this.nextUfoIsSpecial = true;
             }
         }
 
@@ -918,8 +925,13 @@ class Game {
 
         this.aliens.forEach(alien => {
             alien.update(this.speed, dt, this.turnX, this.turnY);
-            if (alien.z <= 15) {
-                alien.reset(this.width, this.height, false);
+            if (alien.z <= 15 || alien.needsReset) {
+                const spawnSpecial = this.nextUfoIsSpecial;
+                alien.reset(this.width, this.height, false, spawnSpecial);
+                if (spawnSpecial) {
+                    this.nextUfoIsSpecial = false;
+                    this.specialUfoTimer = 45 + Math.random() * 20; // 45-65 seconds interval
+                }
             }
         });
 

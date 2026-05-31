@@ -83,6 +83,7 @@ class Game {
         this.powerUps = [];
         this.phasers = [];
         this.particles = [];
+        this.alienProjectiles = [];
 
         // Weapon upgrades states
         this.activeWeapon = 'normal';
@@ -136,6 +137,7 @@ class Game {
         this.cockpit.healthVal = this.cockpit.healthMax;
         this.cockpit.shieldRechargeDelay = 0;
         this.healthCanisterTimer = 60.0;
+        this.alienProjectiles = [];
         
         // Reset all asteroids (this ensures their health gets recalculated for the new mode!)
         this.asteroids.forEach(ast => ast.reset(this.width, this.height, true));
@@ -465,7 +467,22 @@ class Game {
     }
 
     checkTargetHits(tx, ty) {
-        // 1. Check hits against power-ups
+        // 1. Check hits against alien projectiles (allow shooting down)
+        for (let i = 0; i < this.alienProjectiles.length; i++) {
+            const proj = this.alienProjectiles[i];
+            if (proj.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
+                if (window.sounds) {
+                    sounds.playProjectilePop();
+                }
+                // Emit small glowing red/white sparks
+                this.spawnExplosionParticles(proj.x, proj.y, proj.z, '#ff1744', 8, 0.8, 0.8, 'sparkle');
+                // Remove projectile
+                this.alienProjectiles.splice(i, 1);
+                return true;
+            }
+        }
+
+        // 2. Check hits against power-ups
         for (let i = 0; i < this.powerUps.length; i++) {
             const pu = this.powerUps[i];
             if (pu.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
@@ -1081,6 +1098,17 @@ class Game {
 
         this.aliens.forEach(alien => {
             alien.update(this.speed, dt, this.turnX, this.turnY);
+            
+            // Check firing state
+            if (alien.wantsToFire) {
+                alien.wantsToFire = false;
+                alien.fireTimer = 3.0 + Math.random() * 4.0;
+                this.alienProjectiles.push(new AlienProjectile(alien.x, alien.y, alien.z));
+                if (window.sounds) {
+                    sounds.playAlienLaser();
+                }
+            }
+
             if (alien.z <= 15 || alien.needsReset) {
                 const spawnSpecial = this.nextUfoIsSpecial;
                 alien.reset(this.width, this.height, false, spawnSpecial);
@@ -1090,6 +1118,43 @@ class Game {
                 }
             }
         });
+
+        // Update alien projectiles and check player collision
+        this.alienProjectiles.forEach(proj => {
+            proj.update(this.speed, dt, this.turnX, this.turnY);
+            
+            if (proj.z <= 15) {
+                const scale = this.focalLength / proj.z;
+                const sx = this.width / 2 + proj.x * scale;
+                const sy = this.height / 2 + proj.y * scale;
+                const drawRadius = proj.radius * scale;
+                
+                const isVisible = (sx + drawRadius >= 0 && sx - drawRadius <= this.width &&
+                                   sy + drawRadius >= 0 && sy - drawRadius <= this.height);
+                
+                if (isVisible) {
+                    const wasShieldZero = (this.cockpit.shieldVal <= 0);
+                    
+                    // Half damage of asteroid: 35 shield, 25 hull
+                    this.cockpit.triggerShieldFlash(35);
+                    this.screenShake = 12;
+                    sounds.playShieldBounce();
+                    this.spawnShieldHitParticles(sx, sy);
+                    
+                    if (window.gameMode === 'advanced') {
+                        if (wasShieldZero) {
+                            this.cockpit.healthVal = Math.max(0, this.cockpit.healthVal - 25);
+                            this.cockpit.addMessage("⚠️ HULL HIT! -25% INTEGRITY", "#ff1744");
+                            
+                            if (this.cockpit.healthVal <= 0) {
+                                this.triggerGameOver();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        this.alienProjectiles = this.alienProjectiles.filter(proj => proj.z > 15);
 
         // Update active powerups
         this.powerUps.forEach(pu => {
@@ -1264,6 +1329,7 @@ class Game {
         this.asteroids.forEach(ast => ast.draw(this.ctx, this.width, this.height, this.focalLength));
         this.aliens.forEach(alien => alien.draw(this.ctx, this.width, this.height, this.focalLength));
         this.powerUps.forEach(pu => pu.draw(this.ctx, this.width, this.height, this.focalLength));
+        this.alienProjectiles.forEach(proj => proj.draw(this.ctx, this.width, this.height, this.focalLength));
         
         if (this.surpriseActive && this.surpriseType === 'whale' && this.spaceWhale) {
             this.spaceWhale.draw(this.ctx, this.width, this.height, this.focalLength);
@@ -1375,6 +1441,7 @@ class Game {
 
     triggerGameOver() {
         this.gameOver = true;
+        this.alienProjectiles = [];
         
         // Hide pointer lock cursor
         if (document.pointerLockElement) {

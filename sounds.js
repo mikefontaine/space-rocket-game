@@ -277,6 +277,58 @@ class SoundManager {
         osc.stop(now + duration + 0.01);
     }
 
+    // Descending sci-fi pitch sweep for alien blasters
+    playAlienLaser() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+
+        const now = this.ctx.currentTime;
+        const duration = 0.25;
+
+        const osc = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + duration);
+
+        gainNode.gain.setValueAtTime(0.08, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+        osc.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.01);
+    }
+
+    // High pitch pop sound when projectile is shot down
+    playProjectilePop() {
+        this.init();
+        this.resume();
+        if (!this.ctx || this.muted) return;
+
+        const now = this.ctx.currentTime;
+        const duration = 0.08;
+
+        const osc = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + duration);
+
+        gainNode.gain.setValueAtTime(0.12, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+        osc.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.01);
+    }
+
     // Simple beep sound for dashboard buttons
     playBeep(pitch = 600, duration = 0.1) {
         this.init();

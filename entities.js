@@ -491,7 +491,8 @@ class AlienShip {
         // Navigation path parameters (aliens wander around playfully)
         this.t = Math.random() * 100;
         if (window.gameMode === 'advanced') {
-            this.driftSpeed = isSpecial ? 1.6 + Math.random() * 1.0 : 1.2 + Math.random() * 1.4;
+            // Speed weaving doubled in advanced mode!
+            this.driftSpeed = isSpecial ? 3.2 + Math.random() * 2.0 : 2.4 + Math.random() * 2.8;
         } else {
             this.driftSpeed = isSpecial ? 1.0 + Math.random() * 0.8 : 0.5 + Math.random() * 1.5;
         }
@@ -499,6 +500,10 @@ class AlienShip {
 
         this.lightsColor = '#ffff00';
         this.lightsTimer = 0;
+
+        // Firing behavior (Advanced Mode blasters)
+        this.fireTimer = 2.0 + Math.random() * 4.0; // initial shot delay
+        this.wantsToFire = false;
 
         // Interactive States
         this.state = 'normal'; // 'normal', 'bubble', 'frozen'
@@ -524,10 +529,22 @@ class AlienShip {
                 this.state = 'normal';
             }
         } else if (this.isSpecial) {
-            // Keep special ship on screen for at least 15 seconds by slowing down z approach
-            this.z -= Math.min(60, speed * 0.12) * dt;
+            // Keep special ship on screen (double speed approach in advanced)
+            const approachMult = (window.gameMode === 'advanced') ? 0.24 : 0.12;
+            const maxZApproach = (window.gameMode === 'advanced') ? 120 : 60;
+            this.z -= Math.min(maxZApproach, speed * approachMult) * dt;
         } else {
-            this.z -= speed * 0.6 * dt;
+            // Approach speed doubled in advanced mode
+            const zSpeed = (window.gameMode === 'advanced') ? speed * 1.2 : speed * 0.6;
+            this.z -= zSpeed * dt;
+        }
+
+        // Alien shooting cooldown countdown
+        if (window.gameMode === 'advanced' && this.state === 'normal' && this.z > 80 && this.z < 950) {
+            this.fireTimer -= dt;
+            if (this.fireTimer <= 0) {
+                this.wantsToFire = true;
+            }
         }
 
         // Add some playful floating motion (sine wave curves)
@@ -1735,3 +1752,71 @@ class PowerUp {
 }
 
 window.PowerUp = PowerUp;
+
+class AlienProjectile {
+    constructor(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.radius = 12; // projectile collision size
+        this.speedZ = 220; // travel speed towards player (units/sec)
+        this.color = '#ff1744'; // Glowing neon red
+        this.glowColor = 'rgba(255, 23, 68, 0.4)';
+    }
+
+    update(speed, dt, turnX, turnY) {
+        // Move towards player (decrease z)
+        this.z -= (this.speedZ + speed * 0.5) * dt;
+        
+        // Steer offsets based on player look rotation
+        this.x -= turnX * dt * (this.z / 1000);
+        this.y -= turnY * dt * (this.z / 1000);
+    }
+
+    draw(ctx, width, height, f) {
+        if (this.z <= 5) return;
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+
+        // Skip if off-screen
+        if (screenX + drawRadius < -50 || screenX - drawRadius > width + 50 ||
+            screenY + drawRadius < -50 || screenY - drawRadius > height + 50) return;
+
+        ctx.save();
+        ctx.translate(screenX, screenY);
+
+        // Outer glowing envelope
+        ctx.fillStyle = this.glowColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, drawRadius * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core blast ball
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = Math.max(1.5, drawRadius * 0.15);
+        ctx.beginPath();
+        ctx.arc(0, 0, drawRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    checkHit(mx, my, width, height, f) {
+        if (this.z <= 10) return false;
+        const scale = f / this.z;
+        const screenX = width / 2 + this.x * scale;
+        const screenY = height / 2 + this.y * scale;
+        const drawRadius = this.radius * scale;
+
+        const dx = mx - screenX;
+        const dy = my - screenY;
+        const hitR = drawRadius * 1.6; // Slightly generous to make shooting them down fun
+        return (dx * dx + dy * dy) < (hitR * hitR);
+    }
+}
+
+window.AlienProjectile = AlienProjectile;

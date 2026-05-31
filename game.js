@@ -87,6 +87,7 @@ class Game {
         this.survivalTimer = 0;
         this.lastDangerLevel = 1;
         window.difficultyMultiplier = 1;
+        window.ufoSpeedMultiplier = 1;
 
         // Weapon upgrades states
         this.activeWeapon = 'normal';
@@ -144,6 +145,7 @@ class Game {
         this.survivalTimer = 0;
         this.lastDangerLevel = 1;
         window.difficultyMultiplier = 1;
+        window.ufoSpeedMultiplier = 1;
         
         // Reset all asteroids (this ensures their health gets recalculated for the new mode!)
         this.asteroids.forEach(ast => ast.reset(this.width, this.height, true));
@@ -798,13 +800,14 @@ class Game {
             const currentLevel = Math.floor(this.survivalTimer / 30) + 1;
             if (currentLevel > this.lastDangerLevel) {
                 this.lastDangerLevel = currentLevel;
-                const multiplier = Math.pow(2, currentLevel - 1);
+                const multiplier = Math.pow(1.5, currentLevel - 1);
                 window.difficultyMultiplier = multiplier;
+                window.ufoSpeedMultiplier = multiplier;
 
                 // Visual warning notifications
                 this.cockpit.addMessage(`🚨 WARNING: DANGER LEVEL ${currentLevel}! 🚨`, "#ff1744");
                 setTimeout(() => {
-                    this.cockpit.addMessage(`⚡ ALIEN SPEED & LASERS x${multiplier}! ⚡`, "#ffea00");
+                    this.cockpit.addMessage(`⚡ ALIEN SPEED x${multiplier.toFixed(2)}! ⚡`, "#ffea00");
                 }, 650);
 
                 if (window.sounds) {
@@ -1130,8 +1133,8 @@ class Game {
             // Check firing state
             if (alien.wantsToFire) {
                 alien.wantsToFire = false;
-                // Fire rate increased by 50% (cooldown divided by 1.5)
-                alien.fireTimer = 2.0 + Math.random() * 2.67;
+                // Fire rate doubled (cooldown divided by 3 total)
+                alien.fireTimer = 1.0 + Math.random() * 1.33;
                 
                 // Only increase the number of projectiles by 1 every danger level increase
                 const projCount = (window.gameMode === 'advanced') ? this.lastDangerLevel : 1;

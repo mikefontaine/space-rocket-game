@@ -501,8 +501,8 @@ class AlienShip {
         this.lightsColor = '#ffff00';
         this.lightsTimer = 0;
 
-        // Firing behavior (Advanced Mode blasters - fire rate increased by 50%)
-        this.fireTimer = 1.33 + Math.random() * 2.67; // initial shot delay
+        // Firing behavior (Advanced Mode blasters - fire rate doubled)
+        this.fireTimer = 0.67 + Math.random() * 1.33; // initial shot delay
         this.wantsToFire = false;
 
         // Interactive States
@@ -518,7 +518,8 @@ class AlienShip {
     }
 
     update(speed, dt, turnX, turnY) {
-        this.t += dt * this.driftSpeed;
+        const ufoSpeedMult = (window.gameMode === 'advanced' && window.ufoSpeedMultiplier) ? window.ufoSpeedMultiplier : 1.0;
+        this.t += dt * this.driftSpeed * ufoSpeedMult;
         this.lightsTimer += dt;
         
         // Slowly float towards the player, but stay floating longer than asteroids
@@ -532,11 +533,11 @@ class AlienShip {
             // Keep special ship on screen (approaches slower than normal ships to stay visible longer)
             const approachMult = (window.gameMode === 'advanced') ? 0.12 : 0.12;
             const maxZApproach = (window.gameMode === 'advanced') ? 45 : 60;
-            this.z -= Math.min(maxZApproach, speed * approachMult) * dt;
+            this.z -= Math.min(maxZApproach * ufoSpeedMult, speed * approachMult * ufoSpeedMult) * dt;
         } else {
             // Approach speed in advanced mode is slower than asteroids (speed * 0.4 vs speed * 1.0)
             const zSpeed = (window.gameMode === 'advanced') ? speed * 0.4 : speed * 0.6;
-            this.z -= zSpeed * dt;
+            this.z -= zSpeed * ufoSpeedMult * dt;
         }
 
         // Alien shooting cooldown countdown
@@ -552,23 +553,23 @@ class AlienShip {
             if (window.gameMode === 'advanced') {
                 const dl = (window.gameInstance && window.gameInstance.lastDangerLevel) ? window.gameInstance.lastDangerLevel : 1;
                 
-                // Decoupled Amplitude Weaving: derivative of sine/cosine path scaled by freq & driftSpeed
+                // Decoupled Amplitude Weaving: derivative of sine/cosine path scaled by freq & driftSpeed & speed multiplier
                 const freqX = this.isSpecial ? 1.5 : 1.0;
                 const freqY = this.isSpecial ? 1.2 : 0.8;
                 
-                // Wider sweeps: at least twice as far as before (decoupled from high frequency scaling)
+                // Wider sweeps: at least twice as far as before (decoupled from frequency scaling)
                 const weaveX = this.isSpecial ? 450 : 250;
                 const weaveY = this.isSpecial ? 240 : 140;
                 
-                this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * weaveX * dt;
-                this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * weaveY * dt;
+                this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * ufoSpeedMult * weaveX * dt;
+                this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * ufoSpeedMult * weaveY * dt;
 
                 // Tier 2 (Levels 4-6): Superimpose circular loop spirals
                 if (dl >= 4) {
                     const spiralRad = this.isSpecial ? 120 : 80;
                     const spiralFreq = 3.0;
-                    this.x += Math.cos(this.t * spiralFreq) * spiralFreq * this.driftSpeed * spiralRad * dt;
-                    this.y += -Math.sin(this.t * spiralFreq) * spiralFreq * this.driftSpeed * spiralRad * dt;
+                    this.x += Math.cos(this.t * spiralFreq) * spiralFreq * this.driftSpeed * ufoSpeedMult * spiralRad * dt;
+                    this.y += -Math.sin(this.t * spiralFreq) * spiralFreq * this.driftSpeed * ufoSpeedMult * spiralRad * dt;
                 }
 
                 // Tier 3 (Levels 7+): Superimpose circular loops plus high-frequency zig-zag and quantum teleportation jitter
@@ -578,8 +579,8 @@ class AlienShip {
                     const zigX = this.isSpecial ? 250 : 150;
                     const zigY = this.isSpecial ? 150 : 90;
                     
-                    this.x += -Math.sin(this.t * zigFreqX) * zigFreqX * this.driftSpeed * zigX * dt;
-                    this.y += Math.cos(this.t * zigFreqY) * zigFreqY * this.driftSpeed * zigY * dt;
+                    this.x += -Math.sin(this.t * zigFreqX) * zigFreqX * this.driftSpeed * ufoSpeedMult * zigX * dt;
+                    this.y += Math.cos(this.t * zigFreqY) * zigFreqY * this.driftSpeed * ufoSpeedMult * zigY * dt;
 
                     // Small random glitch jump/teleport (5% chance per frame)
                     if (Math.random() < 0.05) {

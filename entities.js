@@ -520,7 +520,10 @@ class AlienShip {
     update(speed, dt, turnX, turnY) {
         const globalSpeedMult = (window.gameMode === 'advanced' && window.ufoSpeedMultiplier) ? window.ufoSpeedMultiplier : 1.0;
         const ufoSpeedMult = this.isSpecial ? 1.0 : globalSpeedMult; // Special UFO speed is constant to make it easier to hit
-        this.t += dt * this.driftSpeed * ufoSpeedMult;
+        
+        // Keep wiggling/drift frequency completely constant so it stays smooth and targetable with a mouse!
+        const ufoDriftMult = 1.0;
+        this.t += dt * this.driftSpeed * ufoDriftMult;
         this.lightsTimer += dt;
         
         // Slowly float towards the player, but stay floating longer than asteroids
@@ -562,15 +565,18 @@ class AlienShip {
                 const weaveX = this.isSpecial ? 450 : 250;
                 const weaveY = this.isSpecial ? 240 : 140;
                 
-                this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * ufoSpeedMult * weaveX * dt;
-                this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * ufoSpeedMult * weaveY * dt;
+                // Define the lateral drift speed multiplier (set to 1.0 to keep wiggling speeds stable and easy to track)
+                const driftSpeedMult = 1.0;
+                
+                this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * driftSpeedMult * weaveX * dt;
+                this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * driftSpeedMult * weaveY * dt;
 
                 // Tier 2 (Levels 4-6): Superimpose tight circular loop spirals (reduced radius and frequency)
                 if (dl >= 4) {
                     const spiralRad = this.isSpecial ? 40 : 25;
                     const spiralFreq = 2.0;
-                    this.x += Math.cos(this.t * spiralFreq) * spiralFreq * this.driftSpeed * ufoSpeedMult * spiralRad * dt;
-                    this.y += -Math.sin(this.t * spiralFreq) * spiralFreq * this.driftSpeed * ufoSpeedMult * spiralRad * dt;
+                    this.x += Math.cos(this.t * spiralFreq) * spiralFreq * this.driftSpeed * driftSpeedMult * spiralRad * dt;
+                    this.y += -Math.sin(this.t * spiralFreq) * spiralFreq * this.driftSpeed * driftSpeedMult * spiralRad * dt;
                 }
 
                 // Tier 3 (Levels 7+): Superimpose circular loops plus high-frequency zig-zag and quantum teleportation jitter
@@ -580,8 +586,8 @@ class AlienShip {
                     const zigX = this.isSpecial ? 40 : 25;
                     const zigY = this.isSpecial ? 25 : 15;
                     
-                    this.x += -Math.sin(this.t * zigFreqX) * zigFreqX * this.driftSpeed * ufoSpeedMult * zigX * dt;
-                    this.y += Math.cos(this.t * zigFreqY) * zigFreqY * this.driftSpeed * ufoSpeedMult * zigY * dt;
+                    this.x += -Math.sin(this.t * zigFreqX) * zigFreqX * this.driftSpeed * driftSpeedMult * zigX * dt;
+                    this.y += Math.cos(this.t * zigFreqY) * zigFreqY * this.driftSpeed * driftSpeedMult * zigY * dt;
 
                     // Small random glitch jump/teleport (5% chance per frame)
                     if (Math.random() < 0.05) {

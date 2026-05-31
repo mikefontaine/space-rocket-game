@@ -491,8 +491,8 @@ class AlienShip {
         // Navigation path parameters (aliens wander around playfully)
         this.t = Math.random() * 100;
         if (window.gameMode === 'advanced') {
-            // Speed weaving doubled in advanced mode!
-            this.driftSpeed = isSpecial ? 3.2 + Math.random() * 2.0 : 2.4 + Math.random() * 2.8;
+            // Speed weaving quadrupled (doubled starting speed relative to previous commit) in advanced mode!
+            this.driftSpeed = isSpecial ? 6.4 + Math.random() * 4.0 : 4.8 + Math.random() * 5.6;
         } else {
             this.driftSpeed = isSpecial ? 1.0 + Math.random() * 0.8 : 0.5 + Math.random() * 1.5;
         }
@@ -529,13 +529,13 @@ class AlienShip {
                 this.state = 'normal';
             }
         } else if (this.isSpecial) {
-            // Keep special ship on screen (double speed approach in advanced)
-            const approachMult = (window.gameMode === 'advanced') ? 0.24 : 0.12;
-            const maxZApproach = (window.gameMode === 'advanced') ? 120 : 60;
+            // Keep special ship on screen (starting speed approach quadrupled in advanced)
+            const approachMult = (window.gameMode === 'advanced') ? 0.48 : 0.12;
+            const maxZApproach = (window.gameMode === 'advanced') ? 240 : 60;
             this.z -= Math.min(maxZApproach, speed * approachMult) * dt;
         } else {
-            // Approach speed doubled in advanced mode
-            const zSpeed = (window.gameMode === 'advanced') ? speed * 1.2 : speed * 0.6;
+            // Approach starting speed quadrupled in advanced mode
+            const zSpeed = (window.gameMode === 'advanced') ? speed * 2.4 : speed * 0.6;
             this.z -= zSpeed * dt;
         }
 
@@ -549,13 +549,42 @@ class AlienShip {
 
         // Add some playful floating motion (sine wave curves)
         if (this.state === 'normal') {
-            if (this.isSpecial) {
-                // Special ship weaves in a wider, more challenging figure-8 pattern
-                this.x += Math.sin(this.t * 1.5 + this.phaseOffset) * 115 * dt;
-                this.y += Math.cos(this.t * 1.2) * 65 * dt;
+            if (window.gameMode === 'advanced') {
+                const dl = (window.gameInstance && window.gameInstance.lastDangerLevel) ? window.gameInstance.lastDangerLevel : 1;
+                
+                // Base wider weave distance
+                const weaveX = this.isSpecial ? 230 : 120;
+                const weaveY = this.isSpecial ? 130 : 70;
+                this.x += Math.sin(this.t * (this.isSpecial ? 1.5 : 1.0) + this.phaseOffset) * weaveX * dt;
+                this.y += Math.cos(this.t * (this.isSpecial ? 1.2 : 0.8)) * weaveY * dt;
+
+                // Tier 2 (Levels 4-6): Superimpose circular loop spirals
+                if (dl >= 4) {
+                    const spiralRad = this.isSpecial ? 120 : 80;
+                    this.x += Math.sin(this.t * 3.0) * spiralRad * dt;
+                    this.y += Math.cos(this.t * 3.0) * spiralRad * dt;
+                }
+
+                // Tier 3 (Levels 7+): Superimpose circular loops plus high-frequency zig-zag and quantum teleportation jitter
+                if (dl >= 7) {
+                    this.x += Math.cos(this.t * 7.0) * (this.isSpecial ? 250 : 150) * dt;
+                    this.y += Math.sin(this.t * 6.0) * (this.isSpecial ? 150 : 90) * dt;
+
+                    // Small random glitch jump/teleport (5% chance per frame)
+                    if (Math.random() < 0.05) {
+                        this.x += (Math.random() - 0.5) * 40;
+                        this.y += (Math.random() - 0.5) * 20;
+                    }
+                }
             } else {
-                this.x += Math.sin(this.t + this.phaseOffset) * 50 * dt;
-                this.y += Math.cos(this.t * 0.8) * 30 * dt;
+                // Child Friendly Mode: Standard slower, simple, narrower weaving
+                if (this.isSpecial) {
+                    this.x += Math.sin(this.t * 1.5 + this.phaseOffset) * 115 * dt;
+                    this.y += Math.cos(this.t * 1.2) * 65 * dt;
+                } else {
+                    this.x += Math.sin(this.t + this.phaseOffset) * 50 * dt;
+                    this.y += Math.cos(this.t * 0.8) * 30 * dt;
+                }
             }
         } else if (this.state === 'bubble') {
             // Spin happily inside the bubble and drift upward

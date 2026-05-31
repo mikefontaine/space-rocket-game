@@ -565,10 +565,10 @@ class AlienShip {
                 this.x += Math.cos(this.t * freqX + this.phaseOffset) * freqX * this.driftSpeed * ufoSpeedMult * weaveX * dt;
                 this.y += -Math.sin(this.t * freqY) * freqY * this.driftSpeed * ufoSpeedMult * weaveY * dt;
 
-                // Tier 2 (Levels 4-6): Superimpose circular loop spirals
+                // Tier 2 (Levels 4-6): Superimpose tight circular loop spirals (reduced radius and frequency)
                 if (dl >= 4) {
-                    const spiralRad = this.isSpecial ? 120 : 80;
-                    const spiralFreq = 3.0;
+                    const spiralRad = this.isSpecial ? 40 : 25;
+                    const spiralFreq = 2.0;
                     this.x += Math.cos(this.t * spiralFreq) * spiralFreq * this.driftSpeed * ufoSpeedMult * spiralRad * dt;
                     this.y += -Math.sin(this.t * spiralFreq) * spiralFreq * this.driftSpeed * ufoSpeedMult * spiralRad * dt;
                 }
@@ -577,16 +577,16 @@ class AlienShip {
                 if (dl >= 7) {
                     const zigFreqX = 7.0;
                     const zigFreqY = 6.0;
-                    const zigX = this.isSpecial ? 250 : 150;
-                    const zigY = this.isSpecial ? 150 : 90;
+                    const zigX = this.isSpecial ? 40 : 25;
+                    const zigY = this.isSpecial ? 25 : 15;
                     
                     this.x += -Math.sin(this.t * zigFreqX) * zigFreqX * this.driftSpeed * ufoSpeedMult * zigX * dt;
                     this.y += Math.cos(this.t * zigFreqY) * zigFreqY * this.driftSpeed * ufoSpeedMult * zigY * dt;
 
                     // Small random glitch jump/teleport (5% chance per frame)
                     if (Math.random() < 0.05) {
-                        this.x += (Math.random() - 0.5) * 60;
-                        this.y += (Math.random() - 0.5) * 30;
+                        this.x += (Math.random() - 0.5) * 30;
+                        this.y += (Math.random() - 0.5) * 15;
                     }
                 }
             } else {

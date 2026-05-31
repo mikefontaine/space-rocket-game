@@ -544,7 +544,7 @@ class Game {
                         // Shatter explosion!
                         this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#e0f7fa', 20, 1.5, 1.4, 'ice_crystal');
                         this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#00e5ff', 10, 1.0, 1.0, 'snowflake');
-                        this.cockpit.score += 15; // Shatters award more points!
+                        this.cockpit.score += ast.maxHealth * 2; // Gem value = hits takes X2
                         this.screenShake = Math.max(this.screenShake, 8);
                         ast.reset(this.width, this.height, false);
                     }
@@ -563,7 +563,7 @@ class Game {
                             this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff4081', 1, 3.5, 0.0, 'bubble'); // Sticky giant bubble
                             this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff80ab', 12, 1.4, 1.3, 'bubble'); // Splat debris
                             this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ffffff', 6, 1.0, 0.8, 'sparkle');
-                            this.cockpit.score += 8;
+                            this.cockpit.score += ast.maxHealth * 2; // Gem value = hits takes X2
                             this.screenShake = Math.max(this.screenShake, 6);
                             ast.reset(this.width, this.height, false);
                         } else {
@@ -601,7 +601,7 @@ class Game {
                             const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
                             this.powerUps.push(new PowerUp(alien.x, alien.y, alien.z, pType));
                             
-                            this.cockpit.score += 35;
+                            this.cockpit.score += 70; // Doubled points for Special UFO (from 35)
                             this.cockpit.addMessage("SPECIAL UFO!", "#ffd700");
                             alien.capture();
                         }
@@ -625,7 +625,7 @@ class Game {
                             this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ff4081', 10, 1.3, 1.0, 'sparkle');
                             this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffffff', 8, 1.0, 0.8, 'sparkle');
                             
-                            this.cockpit.score += 35;
+                            this.cockpit.score += 70; // Doubled points for Special UFO (from 35)
                             this.cockpit.addMessage("SPECIAL UFO!", "#ffd700");
                             alien.capture();
                         } else {
@@ -696,7 +696,7 @@ class Game {
                 this.spawnExplosionParticles(ast.x, ast.y, ast.z, colors[c % colors.length], 1, 2.6, 2.2, 'default');
             }
             
-            this.cockpit.score += isChainHit ? 10 : 8; // Chain reactions award higher points!
+            this.cockpit.score += ast.maxHealth * 2; // Gem value = hits takes X2
             this.screenShake = Math.max(this.screenShake, isChainHit ? 22 : 18);
             
             // Chain Reaction Mechanics (scan neighbors in 3D space)
@@ -734,7 +734,7 @@ class Game {
             this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ffea00', 4, 1.2, 1.4, 'sparkle');
             this.spawnExplosionParticles(ast.x, ast.y, ast.z, ast.color, 10, 1.0, 1.0, 'default');
             
-            this.cockpit.score += 5;
+            this.cockpit.score += ast.maxHealth * 2; // Gem value = hits takes X2
             this.screenShake = Math.max(this.screenShake, 5);
             ast.reset(this.width, this.height, false);
         }
@@ -1130,10 +1130,12 @@ class Game {
             // Check firing state
             if (alien.wantsToFire) {
                 alien.wantsToFire = false;
-                alien.fireTimer = 3.0 + Math.random() * 4.0;
+                // Fire rate increased by 50% (cooldown divided by 1.5)
+                alien.fireTimer = 2.0 + Math.random() * 2.67;
                 
-                const mult = (window.gameMode === 'advanced' && window.difficultyMultiplier) ? window.difficultyMultiplier : 1;
-                for (let k = 0; k < mult; k++) {
+                // Only increase the number of projectiles by 1 every danger level increase
+                const projCount = (window.gameMode === 'advanced') ? this.lastDangerLevel : 1;
+                for (let k = 0; k < projCount; k++) {
                     const ox = (Math.random() - 0.5) * 45;
                     const oy = (Math.random() - 0.5) * 25;
                     const oz = alien.z + (Math.random() - 0.5) * 20;

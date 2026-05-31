@@ -10,12 +10,24 @@
 <body>
 
     <!-- Start Overlay Screen to enable browser Audio Context on click -->
-    <div id="startOverlay" onclick="launchRocket()">
+    <div id="startOverlay">
         <div class="title-container">
             <div class="rocket-icon">🚀</div>
             <h1>LUNA'S GRAND SPACE ADVENTURE</h1>
-            <p class="subtitle">For Astronaut Luna's Grand Adventure!</p>
-            <button class="launch-btn" id="launchButton">LAUNCH ROCKET! 💫</button>
+            <p class="subtitle">Select your space adventure mode below!</p>
+            
+            <div class="mode-select-container">
+                <button class="mode-btn child-mode" onclick="launchRocket('child', event)">
+                    <div class="mode-emoji">🧒</div>
+                    <div class="mode-title">KIDS PLAY</div>
+                    <p class="mode-desc">Easy steering & single-shot zaps! Spawns power-ups frequently.</p>
+                </button>
+                <button class="mode-btn advanced-mode" onclick="launchRocket('advanced', event)">
+                    <div class="mode-emoji">🚀</div>
+                    <div class="mode-title">ADVANCED</div>
+                    <p class="mode-desc">Asteroids need multiple hits! UFOs fly faster and weapons do different damage.</p>
+                </button>
+            </div>
             <p id="controllerHint" style="font-size: 1.1rem; color: #80deea; margin: 15px 0 0 0;">🎮 Plug in a controller & press any button to connect!</p>
             <div id="gamepadIndicator" style="display: none; color: #39ff14; font-size: 1.3rem; font-weight: bold; margin-top: 25px; text-shadow: 0 0 10px rgba(57,255,20,0.4); animation: pulse 1.5s infinite;">🎮 XBOX CONTROLLER CONNECTED! READY TO FLY!</div>
         </div>
@@ -98,7 +110,15 @@
             document.body.classList.add('touch-device');
         }
 
-        function launchRocket() {
+        function launchRocket(mode, event) {
+            if (event) event.stopPropagation();
+
+            // Set the game mode
+            window.gameMode = mode;
+            if (window.gameInstance) {
+                window.gameInstance.setMode(mode);
+            }
+
             // Hide the startup screen overlay
             const overlay = document.getElementById('startOverlay');
             overlay.classList.add('hidden');

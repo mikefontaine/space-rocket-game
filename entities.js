@@ -291,6 +291,20 @@ class Asteroid {
                 r: 0.1 + Math.random() * 0.15
             });
         }
+
+        // Set health based on game mode and color
+        if (window.gameMode === 'advanced') {
+            if (this.color === '#ab47bc') {
+                this.maxHealth = 4; // Purple space crystals are hardest (4 hits)
+            } else if (this.color === '#8d6e63') {
+                this.maxHealth = 3; // Brown rocks are medium (3 hits)
+            } else {
+                this.maxHealth = 2; // Gray rocks are basic (2 hits)
+            }
+        } else {
+            this.maxHealth = 1; // Child Friendly mode (1 hit)
+        }
+        this.health = this.maxHealth;
     }
 
     update(speed, dt, turnX, turnY) {
@@ -412,6 +426,27 @@ class Asteroid {
         ctx.lineWidth = Math.max(2, drawRadius * 0.08);
         ctx.stroke();
 
+        // Draw arcade health bar in Advanced Mode if damaged
+        if (window.gameMode === 'advanced' && this.health < this.maxHealth && this.z > 15) {
+            ctx.save();
+            const barW = drawRadius * 1.0;
+            const barH = 5;
+            const bx = -barW / 2;
+            const by = -drawRadius - 12;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(bx, by, barW, barH);
+
+            const pct = this.health / this.maxHealth;
+            ctx.fillStyle = pct > 0.5 ? '#39ff14' : pct > 0.25 ? '#ffeb3b' : '#ff1744';
+            ctx.fillRect(bx, by, barW * pct, barH);
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx, by, barW, barH);
+            ctx.restore();
+        }
+
         ctx.restore();
     }
 
@@ -455,18 +490,25 @@ class AlienShip {
 
         // Navigation path parameters (aliens wander around playfully)
         this.t = Math.random() * 100;
-        this.driftSpeed = isSpecial ? 1.0 + Math.random() * 0.8 : 0.5 + Math.random() * 1.5;
+        if (window.gameMode === 'advanced') {
+            this.driftSpeed = isSpecial ? 1.6 + Math.random() * 1.0 : 1.2 + Math.random() * 1.4;
+        } else {
+            this.driftSpeed = isSpecial ? 1.0 + Math.random() * 0.8 : 0.5 + Math.random() * 1.5;
+        }
         this.phaseOffset = Math.random() * Math.PI * 2;
 
         this.lightsColor = '#ffff00';
         this.lightsTimer = 0;
 
         // Interactive States
-        this.state = 'normal'; // 'normal', 'bubble'
+        this.state = 'normal'; // 'normal', 'bubble', 'frozen'
         this.bubbleTimer = 0;
+        this.freezeTimer = 0;
         this.spinAngle = 0;
         this.spinSpeed = 0;
         
+        this.maxHealth = (isSpecial && window.gameMode === 'advanced') ? 5 : 1;
+        this.health = this.maxHealth;
         this.needsReset = false; // Flag for game.js to handle capture reset
     }
 
@@ -475,7 +517,13 @@ class AlienShip {
         this.lightsTimer += dt;
         
         // Slowly float towards the player, but stay floating longer than asteroids
-        if (this.isSpecial) {
+        if (this.state === 'frozen') {
+            this.z -= Math.min(20, speed * 0.05) * dt; // Drifts extremely slowly when frozen
+            this.freezeTimer -= dt;
+            if (this.freezeTimer <= 0) {
+                this.state = 'normal';
+            }
+        } else if (this.isSpecial) {
             // Keep special ship on screen for at least 15 seconds by slowing down z approach
             this.z -= Math.min(60, speed * 0.12) * dt;
         } else {
@@ -553,10 +601,18 @@ class AlienShip {
 
         // Draw Cute Alien UFO
         
+        // Setup colors for frozen / normal state
+        let mainColor = this.color;
+        let domeColor = this.domeColor;
+        if (this.state === 'frozen') {
+            mainColor = '#e0f7fa'; // ice-white flying saucer
+            domeColor = 'rgba(77, 208, 225, 0.65)'; // icy cyan dome
+        }
+
         // 1. Alien Cockpit Dome
         ctx.beginPath();
         ctx.arc(0, -r * 0.1, r * 0.5, Math.PI, 0);
-        ctx.fillStyle = this.domeColor;
+        ctx.fillStyle = domeColor;
         ctx.fill();
         ctx.strokeStyle = '#263238';
         ctx.lineWidth = Math.max(1.5, r * 0.05);
@@ -605,7 +661,7 @@ class AlienShip {
         // 3. UFO Flying Saucer Metal Rim (Main saucer ring)
         ctx.beginPath();
         ctx.ellipse(0, r * 0.1, r, r * 0.35, 0, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = mainColor;
         ctx.fill();
         ctx.strokeStyle = '#263238';
         ctx.lineWidth = Math.max(2, r * 0.08);
@@ -629,6 +685,43 @@ class AlienShip {
             ctx.lineWidth = Math.max(1, r * 0.03);
             ctx.stroke();
         });
+
+        // Extra frosty snowflake outline details if frozen
+        if (this.state === 'frozen') {
+            ctx.save();
+            ctx.strokeStyle = '#ffffffaa';
+            ctx.lineWidth = Math.max(1.5, r * 0.04);
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.35, -r * 0.35);
+            ctx.lineTo(r * 0.35, r * 0.35);
+            ctx.moveTo(r * 0.35, -r * 0.35);
+            ctx.lineTo(-r * 0.35, r * 0.35);
+            ctx.moveTo(-r * 0.45, 0);
+            ctx.lineTo(r * 0.45, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Draw arcade health bar for special UFO in Advanced Mode if damaged
+        if (window.gameMode === 'advanced' && this.isSpecial && this.health < this.maxHealth && this.state === 'normal') {
+            ctx.save();
+            const barW = r * 1.2;
+            const barH = 6;
+            const bx = -barW / 2;
+            const by = -r * 0.8;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(bx, by, barW, barH);
+
+            const pct = this.health / this.maxHealth;
+            ctx.fillStyle = '#ffd700'; // Golden health bar for special UFO!
+            ctx.fillRect(bx, by, barW * pct, barH);
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(bx, by, barW, barH);
+            ctx.restore();
+        }
 
         ctx.restore();
 

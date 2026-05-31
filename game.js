@@ -114,6 +114,27 @@ class Game {
         }
     }
 
+    setMode(mode) {
+        this.activeWeapon = 'normal';
+        this.weaponTimer = 0;
+        this.specialUfoTimer = 15 + Math.random() * 10;
+        this.nextUfoIsSpecial = false;
+        
+        // Repopulate aliens list depending on mode
+        this.aliens = [];
+        const alienCount = mode === 'advanced' ? 3 : 1;
+        for (let i = 0; i < alienCount; i++) {
+            this.aliens.push(new AlienShip(this.width, this.height));
+        }
+        
+        // Reset score & shield bubble
+        this.cockpit.score = 0;
+        this.cockpit.shieldVal = this.cockpit.shieldMax;
+        
+        // Reset all asteroids (this ensures their health gets recalculated for the new mode!)
+        this.asteroids.forEach(ast => ast.reset(this.width, this.height, true));
+    }
+
     initEntities() {
         // Create 180 stars
         for (let i = 0; i < 180; i++) {
@@ -473,7 +494,7 @@ class Game {
             const ast = this.asteroids[i];
             if (ast.checkHit(tx, ty, this.width, this.height, this.focalLength)) {
                 if (this.activeWeapon === 'ice_cream' && this.weaponTimer > 0) {
-                    // Ice cream freeze ray hit
+                    // Ice cream freeze ray hit: destroy in 2 shots
                     if (ast.state === 'normal') {
                         sounds.playFreeze();
                         ast.state = 'frozen';
@@ -488,19 +509,32 @@ class Game {
                         this.screenShake = Math.max(this.screenShake, 8);
                         ast.reset(this.width, this.height, false);
                     }
-                } else if (this.activeWeapon === 'bubble_gum' && this.weaponTimer > 0) {
-                    // Bubble gum launcher hit
-                    sounds.playBubblePop();
-                    // Bubble sticks, expands, pops
-                    this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff4081', 1, 3.5, 0.0, 'bubble'); // Sticky giant bubble
-                    this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff80ab', 12, 1.4, 1.3, 'bubble'); // Splat debris
-                    this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ffffff', 6, 1.0, 0.8, 'sparkle');
-                    this.cockpit.score += 8;
-                    this.screenShake = Math.max(this.screenShake, 6);
-                    ast.reset(this.width, this.height, false);
                 } else {
-                    // Standard / Surprise Rainbow Phasers
-                    this.triggerAsteroidExplosion(ast, false);
+                    // Apply health damage (Standard: 1, Bubble Gum: 2, Star: 1)
+                    let damage = 1;
+                    if (this.activeWeapon === 'bubble_gum' && this.weaponTimer > 0) {
+                        damage = 2; // Bubble gum launcher does 2x damage!
+                    }
+                    
+                    ast.health -= damage;
+                    if (ast.health <= 0) {
+                        // Explode!
+                        if (this.activeWeapon === 'bubble_gum' && this.weaponTimer > 0) {
+                            sounds.playBubblePop();
+                            this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff4081', 1, 3.5, 0.0, 'bubble'); // Sticky giant bubble
+                            this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ff80ab', 12, 1.4, 1.3, 'bubble'); // Splat debris
+                            this.spawnExplosionParticles(ast.x, ast.y, ast.z, '#ffffff', 6, 1.0, 0.8, 'sparkle');
+                            this.cockpit.score += 8;
+                            this.screenShake = Math.max(this.screenShake, 6);
+                            ast.reset(this.width, this.height, false);
+                        } else {
+                            this.triggerAsteroidExplosion(ast, false);
+                        }
+                    } else {
+                        // Play shield bounce hit chime note and spawn impact particles
+                        sounds.playShieldBounce();
+                        this.spawnExplosionParticles(ast.x, ast.y, ast.z, ast.color, 4, 0.6, 0.5, 'default');
+                    }
                 }
                 return true;
             }
@@ -513,25 +547,86 @@ class Game {
                 sounds.playAlienHappy();
                 
                 if (alien.isSpecial) {
-                    // Tagging special golden UFO spawns a random power-up in its place
-                    const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
-                    this.powerUps.push(new PowerUp(alien.x, alien.y, alien.z, pType));
-                    
-                    // Extra magical gold & magenta sparkles for special UFO
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffd700', 16, 1.5, 1.3, 'sparkle');
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ff4081', 10, 1.3, 1.0, 'sparkle');
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffffff', 8, 1.0, 0.8, 'sparkle');
-                    
-                    this.cockpit.score += 35;
-                    this.cockpit.addMessage("SPECIAL UFO!", "#ffd700");
+                    if (this.activeWeapon === 'ice_cream' && this.weaponTimer > 0) {
+                        // Ice cream freeze ray: freeze on 1st hit, shatter/destroy on 2nd hit
+                        if (alien.state === 'normal') {
+                            sounds.playFreeze();
+                            alien.state = 'frozen';
+                            alien.freezeTimer = 7.0; // frozen state
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#00e5ff', 12, 1.2, 0.8, 'snowflake');
+                        } else if (alien.state === 'frozen') {
+                            sounds.playIceShatter();
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#e0f7fa', 20, 1.5, 1.4, 'ice_crystal');
+                            
+                            // Spawn random power-up in its place
+                            const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
+                            this.powerUps.push(new PowerUp(alien.x, alien.y, alien.z, pType));
+                            
+                            this.cockpit.score += 35;
+                            this.cockpit.addMessage("SPECIAL UFO!", "#ffd700");
+                            alien.capture();
+                        }
+                    } else {
+                        // Apply damage (Star: 1, Bubble Gum: 2, Standard: 1)
+                        let damage = 1;
+                        if (this.activeWeapon === 'bubble_gum' && this.weaponTimer > 0) {
+                            damage = 2; // Bubble gum launcher does 2x damage!
+                        }
+                        
+                        alien.health -= damage;
+                        this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffd700', 4, 0.8, 0.5, 'sparkle');
+                        
+                        if (alien.health <= 0) {
+                            // Tagging special golden UFO spawns a random power-up in its place
+                            const pType = ['star_wand', 'bubble_gum', 'ice_cream'][Math.floor(Math.random() * 3)];
+                            this.powerUps.push(new PowerUp(alien.x, alien.y, alien.z, pType));
+                            
+                            // Extra magical gold & magenta sparkles for special UFO
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffd700', 16, 1.5, 1.3, 'sparkle');
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ff4081', 10, 1.3, 1.0, 'sparkle');
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#ffffff', 8, 1.0, 0.8, 'sparkle');
+                            
+                            this.cockpit.score += 35;
+                            this.cockpit.addMessage("SPECIAL UFO!", "#ffd700");
+                            alien.capture();
+                        } else {
+                            // Play metallic shield/hit chime and show HP progress message
+                            sounds.playShieldBounce();
+                            this.cockpit.addMessage(`HIT! ${alien.health}/${alien.maxHealth}`, '#ffd700');
+                        }
+                    }
                 } else {
-                    // Normal friendly UFO: tag sparkles only (no power-up spawn)
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#f48fb1', 8, 1.0, 1.0, 'default');
-                    this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#80deea', 8, 1.0, 1.0, 'sparkle');
-                    this.cockpit.score += 15;
+                    if (this.activeWeapon === 'ice_cream' && this.weaponTimer > 0) {
+                        // Ice cream freeze ray: freeze on 1st hit, shatter on 2nd hit
+                        if (alien.state === 'normal') {
+                            sounds.playFreeze();
+                            alien.state = 'frozen';
+                            alien.freezeTimer = 7.0;
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#00e5ff', 8, 1.2, 0.8, 'snowflake');
+                        } else if (alien.state === 'frozen') {
+                            sounds.playIceShatter();
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#e0f7fa', 15, 1.2, 1.0, 'ice_crystal');
+                            this.cockpit.score += 15;
+                            alien.capture();
+                        }
+                    } else {
+                        // Apply damage (Star: 1, Bubble: 2, Standard: 1)
+                        let damage = 1;
+                        if (this.activeWeapon === 'bubble_gum' && this.weaponTimer > 0) {
+                            damage = 2;
+                        }
+                        alien.health -= damage;
+                        
+                        if (alien.health <= 0) {
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#f48fb1', 8, 1.0, 1.0, 'default');
+                            this.spawnExplosionParticles(alien.x, alien.y, alien.z, '#80deea', 8, 1.0, 1.0, 'sparkle');
+                            this.cockpit.score += 15;
+                            alien.capture();
+                        } else {
+                            sounds.playShieldBounce();
+                        }
+                    }
                 }
-                
-                alien.capture();
                 return true;
             }
         }
@@ -1232,6 +1327,6 @@ class Game {
 
 // Start game on window load
 window.addEventListener('load', () => {
-    const game = new Game();
-    game.loop();
+    window.gameInstance = new Game();
+    window.gameInstance.loop();
 });

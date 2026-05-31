@@ -1800,19 +1800,37 @@ class PowerUp {
 window.PowerUp = PowerUp;
 
 class AlienProjectile {
-    constructor(x, y, z) {
+    constructor(x, y, z, playerSpeed = 100) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.radius = 12; // projectile collision size
         this.speedZ = 220; // travel speed towards player (units/sec)
+        
+        // Aim trajectory towards player cockpit (0, 0, 0)
+        const totalSpeedZ = this.speedZ + playerSpeed * 0.5;
+        const timeToPlayer = z / totalSpeedZ;
+        
+        // Add a slight spread so it is aimed near the player but not 100% laser-precise
+        const spread = 25; // 3D units spread
+        const targetX = (Math.random() - 0.5) * spread;
+        const targetY = (Math.random() - 0.5) * spread;
+        
+        this.vx = (targetX - x) / timeToPlayer;
+        this.vy = (targetY - y) / timeToPlayer;
+        
         this.color = '#ff1744'; // Glowing neon red
         this.glowColor = 'rgba(255, 23, 68, 0.4)';
     }
 
     update(speed, dt, turnX, turnY) {
-        // Move towards player (decrease z)
-        this.z -= (this.speedZ + speed * 0.5) * dt;
+        // Move towards player in Z
+        const totalSpeedZ = this.speedZ + speed * 0.5;
+        this.z -= totalSpeedZ * dt;
+        
+        // Move along aimed trajectory in X and Y
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
         
         // Steer offsets based on player look rotation
         this.x -= turnX * dt * (this.z / 1000);

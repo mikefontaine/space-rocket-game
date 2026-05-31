@@ -1142,7 +1142,7 @@ class Game {
                     const ox = (Math.random() - 0.5) * 45;
                     const oy = (Math.random() - 0.5) * 25;
                     const oz = alien.z + (Math.random() - 0.5) * 20;
-                    this.alienProjectiles.push(new AlienProjectile(alien.x + ox, alien.y + oy, oz));
+                    this.alienProjectiles.push(new AlienProjectile(alien.x + ox, alien.y + oy, oz, this.speed));
                 }
                 if (window.sounds) {
                     sounds.playAlienLaser();

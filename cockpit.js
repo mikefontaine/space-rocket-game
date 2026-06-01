@@ -287,61 +287,63 @@ class Cockpit {
         ctx.fillText(isAccelerating ? "🔥 HYPERDRIVE BOOST!" : "🛸 CRUISING SPEED", width * 0.18, dashY + dashH * 0.72);
 
         // ----------------------------------------------------
-        // 5. Shield Status Bar (Right Side Dashboard)
-        // ----------------------------------------------------
-        const barX = width * 0.65;
-        const barY = dashY + dashH * 0.45;
-        const barW = width * 0.16;
-        const barH = height * 0.022;
+        const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0 || width < 900);
+        
+        if (isMobile) {
+            this.drawMobileHUD(ctx, width, height);
+        } else {
+            // 5. Shield Status Bar (Right Side Dashboard)
+            const barX = width * 0.65;
+            const barY = dashY + dashH * 0.45;
+            const barW = width * 0.16;
+            const barH = height * 0.022;
 
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(barX, barY, barW, barH);
-        ctx.strokeStyle = '#263238';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(barX, barY, barW, barH);
-
-        const fillW = (this.shieldVal / this.shieldMax) * barW;
-        ctx.fillStyle = this.shieldColor;
-        ctx.fillRect(barX + 1, barY + 1, fillW - 2, barH - 2);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px "Courier New"';
-        ctx.fillText("🛡️ BUBBLE SHIELD ENERGY", barX, barY - 8);
-
-        // Draw danger level tracker in the console gap (Advanced Mode only)
-        if (window.gameMode === 'advanced') {
-            const dangerLevel = (window.gameInstance && window.gameInstance.lastDangerLevel) ? window.gameInstance.lastDangerLevel : 1;
-            ctx.fillStyle = '#ff1744'; // Neon alarm red
-            ctx.font = 'bold 12px "Courier New"';
-            ctx.fillText(`🚨 DANGER LEVEL: ${dangerLevel}`, barX, barY + barH + 14);
-        }
-
-        // ----------------------------------------------------
-        // 5b. Ship Hull Health Bar (Advanced Mode only)
-        // ----------------------------------------------------
-        if (window.gameMode === 'advanced') {
-            const healthBarY = dashY + dashH * 0.72;
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(barX, healthBarY, barW, barH);
+            ctx.fillRect(barX, barY, barW, barH);
             ctx.strokeStyle = '#263238';
             ctx.lineWidth = 2;
-            ctx.strokeRect(barX, healthBarY, barW, barH);
+            ctx.strokeRect(barX, barY, barW, barH);
 
-            const fillHealthW = Math.max(0, (this.healthVal / this.healthMax) * barW);
-            let hColor = '#39ff14'; // Bright green
-            if (this.healthVal <= 25) {
-                hColor = '#ff1744'; // Red
-            } else if (this.healthVal <= 50) {
-                hColor = '#ffeb3b'; // Yellow
-            }
-            ctx.fillStyle = hColor;
-            ctx.fillRect(barX + 1, healthBarY + 1, fillHealthW - 2, barH - 2);
+            const fillW = (this.shieldVal / this.shieldMax) * barW;
+            ctx.fillStyle = this.shieldColor;
+            ctx.fillRect(barX + 1, barY + 1, fillW - 2, barH - 2);
 
             ctx.fillStyle = '#ffffff';
             ctx.font = '12px "Courier New"';
-            ctx.fillText("🚀 SHIP HULL HEALTH", barX, healthBarY - 8);
-        }
+            ctx.fillText("🛡️ BUBBLE SHIELD ENERGY", barX, barY - 8);
 
+            // Draw danger level tracker in the console gap (Advanced Mode only)
+            if (window.gameMode === 'advanced') {
+                const dangerLevel = (window.gameInstance && window.gameInstance.lastDangerLevel) ? window.gameInstance.lastDangerLevel : 1;
+                ctx.fillStyle = '#ff1744'; // Neon alarm red
+                ctx.font = 'bold 12px "Courier New"';
+                ctx.fillText(`🚨 DANGER LEVEL: ${dangerLevel}`, barX, barY + barH + 14);
+            }
+
+            // 5b. Ship Hull Health Bar (Advanced Mode only)
+            if (window.gameMode === 'advanced') {
+                const healthBarY = dashY + dashH * 0.72;
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(barX, healthBarY, barW, barH);
+                ctx.strokeStyle = '#263238';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, healthBarY, barW, barH);
+
+                const fillHealthW = Math.max(0, (this.healthVal / this.healthMax) * barW);
+                let hColor = '#39ff14'; // Bright green
+                if (this.healthVal <= 25) {
+                    hColor = '#ff1744'; // Red
+                } else if (this.healthVal <= 50) {
+                    hColor = '#ffeb3b'; // Yellow
+                }
+                ctx.fillStyle = hColor;
+                ctx.fillRect(barX + 1, healthBarY + 1, fillHealthW - 2, barH - 2);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px "Courier New"';
+                ctx.fillText("🚀 SHIP HULL HEALTH", barX, healthBarY - 8);
+            }
+        }
         // ----------------------------------------------------
         // 6. Translucent AI Face Screen (Upper Right Corner)
         // ----------------------------------------------------
@@ -566,6 +568,97 @@ class Cockpit {
         ctx.moveTo(x + size, y - size);
         ctx.lineTo(x - size, y + size);
         ctx.stroke();
+    }
+
+    drawMobileHUD(ctx, width, height) {
+        const isAdvanced = (window.gameMode === 'advanced');
+        const dangerLevel = (window.gameInstance && window.gameInstance.lastDangerLevel) ? window.gameInstance.lastDangerLevel : 1;
+        
+        const hudX = 20;
+        const hudY = 20;
+        const hudW = 200;
+        // Advanced shows shields, health, and danger level. Kids mode just shows shields.
+        const hudH = isAdvanced ? 95 : 45;
+
+        ctx.save();
+        
+        // 1. Translucent glass backing
+        ctx.fillStyle = 'rgba(10, 20, 40, 0.55)';
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(hudX, hudY, hudW, hudH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        // Clip/Scanlines for sci-fi look
+        ctx.beginPath();
+        ctx.roundRect(hudX, hudY, hudW, hudH, 8);
+        ctx.clip();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.lineWidth = 1;
+        for (let l = hudY + 4; l < hudY + hudH; l += 4) {
+            ctx.beginPath();
+            ctx.moveTo(hudX, l);
+            ctx.lineTo(hudX + hudW, l);
+            ctx.stroke();
+        }
+
+        // Reset clipping and draw indicators
+        ctx.restore();
+        ctx.save();
+
+        const barX = hudX + 12;
+        const barW = hudW - 24;
+        const barH = 10;
+
+        // Draw Shield Bar
+        const shieldY = hudY + 22;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(barX, shieldY, barW, barH);
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(barX, shieldY, barW, barH);
+
+        const shieldFillW = (this.shieldVal / this.shieldMax) * barW;
+        ctx.fillStyle = this.shieldColor;
+        ctx.fillRect(barX + 1, shieldY + 1, Math.max(0, shieldFillW - 2), barH - 2);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9px "Courier New", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText("🛡️ SHIELD", barX, shieldY - 4);
+
+        if (isAdvanced) {
+            // Draw Hull Health Bar
+            const healthY = hudY + 50;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(barX, healthY, barW, barH);
+            ctx.strokeStyle = '#263238';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(barX, healthY, barW, barH);
+
+            const healthFillW = (this.healthVal / this.healthMax) * barW;
+            let hColor = '#39ff14';
+            if (this.healthVal <= 25) {
+                hColor = '#ff1744';
+            } else if (this.healthVal <= 50) {
+                hColor = '#ffeb3b';
+            }
+            ctx.fillStyle = hColor;
+            ctx.fillRect(barX + 1, healthY + 1, Math.max(0, healthFillW - 2), barH - 2);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText("🚀 HULL HEALTH", barX, healthY - 4);
+
+            // Draw Danger Level Indicator
+            const dangerY = hudY + 80;
+            ctx.fillStyle = '#ff1744'; // Red
+            ctx.font = 'bold 9px "Courier New", monospace';
+            ctx.fillText(`🚨 DANGER LEVEL: ${dangerLevel}`, barX, dangerY);
+        }
+
+        ctx.restore();
     }
 }
 

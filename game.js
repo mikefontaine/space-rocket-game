@@ -1539,7 +1539,8 @@ class Game {
         listEl.innerHTML = '';
         scores.forEach((entry, idx) => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="rank">#${idx+1}</span> <span class="name">${entry.name}</span> <span class="score">${entry.score} ✨</span>`;
+            const flag = entry.flag || '🚀';
+            li.innerHTML = `<span class="rank">#${idx+1}</span> <span class="flag" style="margin-right: 8px; font-size: 1.15rem;">${flag}</span> <span class="name">${entry.name}</span> <span class="score">${entry.score} ✨</span>`;
             listEl.appendChild(li);
         });
     }

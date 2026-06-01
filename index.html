@@ -125,7 +125,7 @@
     </div>
 
     <!-- Version Tag in the bottom left -->
-    <div id="gameVersionTag" style="position: absolute; bottom: 10px; left: 15px; color: rgba(128, 222, 234, 0.55); font-family: 'Fredoka', sans-serif; font-size: 0.8rem; z-index: 1000; pointer-events: none; text-shadow: 0 0 5px rgba(0, 0, 0, 0.8); letter-spacing: 0.8px; font-weight: 500;">SYS v1.5.1-LOG</div>
+    <div id="gameVersionTag" style="position: absolute; bottom: 10px; left: 15px; color: rgba(128, 222, 234, 0.55); font-family: 'Fredoka', sans-serif; font-size: 0.8rem; z-index: 1000; pointer-events: none; text-shadow: 0 0 5px rgba(0, 0, 0, 0.8); letter-spacing: 0.8px; font-weight: 500;">SYS v1.5.2-HUD</div>
 
     <!-- Load Game Components in proper dependency order -->
     <script src="sounds.js"></script>
@@ -180,6 +180,24 @@
         // --- High Score and Game Over Support Functions ---
         const HIGH_SCORES_KEY = 'space_high_scores';
 
+        // Global variables to store player location metadata
+        window.playerIp = '127.0.0.1';
+        window.playerFlag = '🚀';
+        window.hasSubmittedCurrentScore = false;
+
+        // Asynchronously fetch player location information on load
+        fetch('https://ipwho.is/')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success !== false) {
+                    window.playerIp = data.ip || '127.0.0.1';
+                    window.playerFlag = data.flag ? data.flag.emoji : '🚀';
+                }
+            })
+            .catch(err => {
+                console.warn("Could not retrieve IP/Flag info (offline or adblocker enabled):", err);
+            });
+
         function getHighScores() {
             try {
                 const data = localStorage.getItem(HIGH_SCORES_KEY);
@@ -188,11 +206,11 @@
                 console.error("Error reading high scores:", e);
             }
             return [
-                { name: "Luna 👧", score: 1000 },
-                { name: "Captain Mike 👨‍🚀", score: 750 },
-                { name: "Robot Helper 🤖", score: 500 },
-                { name: "Alien Pip 👽", score: 250 },
-                { name: "Space Whale 🐳", score: 100 }
+                { name: "Luna 👧", score: 1000, flag: "🇨🇦", ip: "127.0.0.1" },
+                { name: "Captain Mike 👨‍🚀", score: 750, flag: "🇺🇸", ip: "127.0.0.1" },
+                { name: "Robot Helper 🤖", score: 500, flag: "🤖", ip: "127.0.0.1" },
+                { name: "Alien Pip 👽", score: 250, flag: "🪐", ip: "127.0.0.1" },
+                { name: "Space Whale 🐳", score: 100, flag: "🐳", ip: "127.0.0.1" }
             ];
         }
 
@@ -225,7 +243,12 @@
         function addHighScore(name, score) {
             let scores = getHighScores();
             const cleanName = filterProfanity(name);
-            scores.push({ name: cleanName, score: score });
+            scores.push({ 
+                name: cleanName, 
+                score: score, 
+                flag: window.playerFlag || '🚀', 
+                ip: window.playerIp || '127.0.0.1' 
+            });
             scores.sort((a, b) => b.score - a.score);
             if (scores.length > 10) {
                 scores = scores.slice(0, 10);
@@ -235,6 +258,12 @@
         }
 
         function submitHighScore() {
+            if (window.hasSubmittedCurrentScore) return;
+            window.hasSubmittedCurrentScore = true;
+
+            const btn = document.getElementById('submitScoreBtn');
+            if (btn) btn.disabled = true;
+
             const input = document.getElementById('playerNameInput');
             const name = input.value.trim() || "Anonymous Astronaut";
             const score = window.gameInstance ? window.gameInstance.cockpit.score : 0;
@@ -251,6 +280,7 @@
         }
 
         function restartGame() {
+            window.hasSubmittedCurrentScore = false;
             const gameOverOverlay = document.getElementById('gameOverOverlay');
             if (gameOverOverlay) {
                 gameOverOverlay.classList.add('hidden');

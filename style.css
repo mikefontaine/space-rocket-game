@@ -532,6 +532,12 @@ p.subtitle {
     width: 100%;
 }
 
+@media (max-width: 600px) {
+    .input-row {
+        flex-direction: column;
+    }
+}
+
 #playerNameInput {
     flex: 1;
     padding: 10px 14px;

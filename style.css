@@ -528,14 +528,9 @@ p.subtitle {
 
 .input-row {
     display: flex;
+    flex-direction: column;
     gap: 12px;
     width: 100%;
-}
-
-@media (max-width: 600px) {
-    .input-row {
-        flex-direction: column;
-    }
 }
 
 #playerNameInput {

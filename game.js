@@ -449,16 +449,16 @@ class Game {
             const isGameOverOverlayActive = gameOverOverlay && !gameOverOverlay.classList.contains('hidden');
 
             if (!isStartOverlayActive && !isGameOverOverlayActive) {
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Up', 'Down', 'Left', 'Right'].includes(e.key)) {
                     e.preventDefault();
                 }
             }
 
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = true;
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = true;
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = true;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = true;
-            if (e.key === ' ' || e.key === 'Spacebar') {
+            if (e.key === 'ArrowUp' || e.key === 'Up' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = true;
+            if (e.key === 'ArrowDown' || e.key === 'Down' || e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = true;
+            if (e.key === 'ArrowLeft' || e.key === 'Left' || e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = true;
+            if (e.key === 'ArrowRight' || e.key === 'Right' || e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = true;
+            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
                 this.keys.Space = true;
                 
                 // Initialize audio context if not already started
@@ -472,11 +472,11 @@ class Game {
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = false;
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = false;
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = false;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = false;
-            if (e.key === ' ' || e.key === 'Spacebar') this.keys.Space = false;
+            if (e.key === 'ArrowUp' || e.key === 'Up' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = false;
+            if (e.key === 'ArrowDown' || e.key === 'Down' || e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = false;
+            if (e.key === 'ArrowLeft' || e.key === 'Left' || e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = false;
+            if (e.key === 'ArrowRight' || e.key === 'Right' || e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = false;
+            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') this.keys.Space = false;
         });
     }
 

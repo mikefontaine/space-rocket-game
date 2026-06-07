@@ -125,7 +125,7 @@
     </div>
 
     <!-- Version Tag in the bottom left -->
-    <div id="gameVersionTag" style="position: absolute; bottom: 10px; left: 15px; color: rgba(128, 222, 234, 0.55); font-family: 'Fredoka', sans-serif; font-size: 0.8rem; z-index: 1000; pointer-events: none; text-shadow: 0 0 5px rgba(0, 0, 0, 0.8); letter-spacing: 0.8px; font-weight: 500;">SYS v1.6.3-ARCADE-KIDS</div>
+    <div id="gameVersionTag" style="position: absolute; bottom: 10px; left: 15px; color: rgba(128, 222, 234, 0.55); font-family: 'Fredoka', sans-serif; font-size: 0.8rem; z-index: 1000; pointer-events: none; text-shadow: 0 0 5px rgba(0, 0, 0, 0.8); letter-spacing: 0.8px; font-weight: 500;">SYS v1.6.4-ARCADE-Z</div>
 
     <!-- Load Game Components in proper dependency order -->
     <script src="sounds.js"></script>
@@ -334,14 +334,14 @@
                 } else if (e.key === 'ArrowRight' || e.key === 'Right' || e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
                     selectedMode = 'advanced';
                     updateStartScreenSelection();
-                } else if (e.key === ' ' || e.key === 'Enter' || e.code === 'Space' || e.code === 'Enter' || e.key === '1' || e.code === 'Digit1') {
+                } else if (e.key === ' ' || e.key === 'Enter' || e.code === 'Space' || e.code === 'Enter' || e.key === '1' || e.code === 'Digit1' || e.key === 'z' || e.key === 'Z' || e.code === 'KeyZ') {
                     e.preventDefault();
                     // Pressing key '1' (arcade Start) launches Kids Play ('child') directly
                     const modeToLaunch = (e.key === '1' || e.code === 'Digit1') ? 'child' : selectedMode;
                     launchRocket(modeToLaunch);
                 }
             } else if (isGameOverOverlayActive) {
-                if (e.key === ' ' || e.key === 'Enter' || e.code === 'Space' || e.code === 'Enter' || e.key === '1' || e.code === 'Digit1') {
+                if (e.key === ' ' || e.key === 'Enter' || e.code === 'Space' || e.code === 'Enter' || e.key === '1' || e.code === 'Digit1' || e.key === 'z' || e.key === 'Z' || e.code === 'KeyZ') {
                     const activeEl = document.activeElement;
                     const nameInput = document.getElementById('playerNameInput');
                     

@@ -449,14 +449,14 @@ class Game {
         // Keydown/Keyup listeners for Arcade Stick keys mapping (arrow keys & space)
         window.addEventListener('keydown', (e) => {
             console.log("DEBUG: game.js keydown received. key:", e.key, "code:", e.code);
-            // Prevent default behavior of arrows and space inside active gameplay to avoid browser scrolling
+            // Prevent default behavior of arrows, space, and Z inside active gameplay to avoid browser scrolling/hotkeys
             const overlay = document.getElementById('startOverlay');
             const isStartOverlayActive = overlay && !overlay.classList.contains('hidden');
             const gameOverOverlay = document.getElementById('gameOverOverlay');
             const isGameOverOverlayActive = gameOverOverlay && !gameOverOverlay.classList.contains('hidden');
 
             if (!isStartOverlayActive && !isGameOverOverlayActive) {
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Up', 'Down', 'Left', 'Right'].includes(e.key)) {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Up', 'Down', 'Left', 'Right', 'z', 'Z'].includes(e.key)) {
                     e.preventDefault();
                 }
             }
@@ -477,9 +477,9 @@ class Game {
                 this.keys.ArrowRight = true;
                 console.log("DEBUG: set ArrowRight = true");
             }
-            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
+            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space' || e.key === 'z' || e.key === 'Z' || e.code === 'KeyZ') {
                 this.keys.Space = true;
-                console.log("DEBUG: set Space = true");
+                console.log("DEBUG: set Space (Fire) = true");
                 
                 // Initialize audio context if not already started
                 if (!this.audioStarted) {
@@ -509,9 +509,9 @@ class Game {
                 this.keys.ArrowRight = false;
                 console.log("DEBUG: set ArrowRight = false");
             }
-            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
+            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space' || e.key === 'z' || e.key === 'Z' || e.code === 'KeyZ') {
                 this.keys.Space = false;
-                console.log("DEBUG: set Space = false");
+                console.log("DEBUG: set Space (Fire) = false");
             }
         });
     }

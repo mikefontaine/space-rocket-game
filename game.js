@@ -205,6 +205,9 @@ class Game {
 
             if (document.pointerLockElement === this.canvas) {
                 if (Math.abs(e.movementX) > 1 || Math.abs(e.movementY) > 1) {
+                    if (this.usingKeyboard) {
+                        console.log("DEBUG: Mouse movement resetting usingKeyboard to false. movementX:", e.movementX, "movementY:", e.movementY);
+                    }
                     this.usingGamepad = false;
                     this.usingTouch = false;
                     this.usingKeyboard = false;
@@ -217,6 +220,9 @@ class Game {
                 }
             } else {
                 if (Math.abs(e.movementX) > 2 || Math.abs(e.movementY) > 2) {
+                    if (this.usingKeyboard) {
+                        console.log("DEBUG: Mouse movement resetting usingKeyboard to false (unlocked). movementX:", e.movementX, "movementY:", e.movementY);
+                    }
                     this.usingGamepad = false;
                     this.usingTouch = false;
                     this.usingKeyboard = false;
@@ -442,6 +448,7 @@ class Game {
 
         // Keydown/Keyup listeners for Arcade Stick keys mapping (arrow keys & space)
         window.addEventListener('keydown', (e) => {
+            console.log("DEBUG: game.js keydown received. key:", e.key, "code:", e.code);
             // Prevent default behavior of arrows and space inside active gameplay to avoid browser scrolling
             const overlay = document.getElementById('startOverlay');
             const isStartOverlayActive = overlay && !overlay.classList.contains('hidden');
@@ -454,12 +461,25 @@ class Game {
                 }
             }
 
-            if (e.key === 'ArrowUp' || e.key === 'Up' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = true;
-            if (e.key === 'ArrowDown' || e.key === 'Down' || e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = true;
-            if (e.key === 'ArrowLeft' || e.key === 'Left' || e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = true;
-            if (e.key === 'ArrowRight' || e.key === 'Right' || e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = true;
+            if (e.key === 'ArrowUp' || e.key === 'Up' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                this.keys.ArrowUp = true;
+                console.log("DEBUG: set ArrowUp = true");
+            }
+            if (e.key === 'ArrowDown' || e.key === 'Down' || e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                this.keys.ArrowDown = true;
+                console.log("DEBUG: set ArrowDown = true");
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'Left' || e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                this.keys.ArrowLeft = true;
+                console.log("DEBUG: set ArrowLeft = true");
+            }
+            if (e.key === 'ArrowRight' || e.key === 'Right' || e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                this.keys.ArrowRight = true;
+                console.log("DEBUG: set ArrowRight = true");
+            }
             if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
                 this.keys.Space = true;
+                console.log("DEBUG: set Space = true");
                 
                 // Initialize audio context if not already started
                 if (!this.audioStarted) {
@@ -472,11 +492,27 @@ class Game {
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'Up' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = false;
-            if (e.key === 'ArrowDown' || e.key === 'Down' || e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = false;
-            if (e.key === 'ArrowLeft' || e.key === 'Left' || e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = false;
-            if (e.key === 'ArrowRight' || e.key === 'Right' || e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = false;
-            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') this.keys.Space = false;
+            console.log("DEBUG: game.js keyup received. key:", e.key, "code:", e.code);
+            if (e.key === 'ArrowUp' || e.key === 'Up' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                this.keys.ArrowUp = false;
+                console.log("DEBUG: set ArrowUp = false");
+            }
+            if (e.key === 'ArrowDown' || e.key === 'Down' || e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                this.keys.ArrowDown = false;
+                console.log("DEBUG: set ArrowDown = false");
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'Left' || e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                this.keys.ArrowLeft = false;
+                console.log("DEBUG: set ArrowLeft = false");
+            }
+            if (e.key === 'ArrowRight' || e.key === 'Right' || e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                this.keys.ArrowRight = false;
+                console.log("DEBUG: set ArrowRight = false");
+            }
+            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
+                this.keys.Space = false;
+                console.log("DEBUG: set Space = false");
+            }
         });
     }
 
@@ -1019,6 +1055,9 @@ class Game {
         if (this.keys.Space) kbFiring = true;
 
         if (kbStickX !== 0 || kbStickY !== 0 || kbFiring) {
+            if (!this.usingKeyboard) {
+                console.log("DEBUG: Active keyboard/arcade input detected. Switching usingKeyboard to true. kbStickX:", kbStickX, "kbStickY:", kbStickY, "kbFiring:", kbFiring);
+            }
             this.usingKeyboard = true;
             this.usingGamepad = false;
             this.usingTouch = false;

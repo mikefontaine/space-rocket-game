@@ -301,6 +301,63 @@
                 window.gameInstance.asteroids.forEach(ast => ast.reset(window.gameInstance.width, window.gameInstance.height, true));
             }
         }
+
+        // --- Arcade Cabinet Menu Keyboard Navigation ---
+        let selectedMode = 'advanced';
+
+        function updateStartScreenSelection() {
+            const childBtn = document.querySelector('.child-mode');
+            const advBtn = document.querySelector('.advanced-mode');
+            if (childBtn && advBtn) {
+                if (selectedMode === 'child') {
+                    childBtn.classList.add('selected');
+                    advBtn.classList.remove('selected');
+                } else {
+                    advBtn.classList.add('selected');
+                    childBtn.classList.remove('selected');
+                }
+            }
+        }
+
+        // Listen for keys on menus
+        window.addEventListener('keydown', (e) => {
+            const startOverlay = document.getElementById('startOverlay');
+            const isStartOverlayActive = startOverlay && !startOverlay.classList.contains('hidden');
+
+            const gameOverOverlay = document.getElementById('gameOverOverlay');
+            const isGameOverOverlayActive = gameOverOverlay && !gameOverOverlay.classList.contains('hidden');
+
+            if (isStartOverlayActive) {
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                    selectedMode = 'child';
+                    updateStartScreenSelection();
+                } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                    selectedMode = 'advanced';
+                    updateStartScreenSelection();
+                } else if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    launchRocket(selectedMode);
+                }
+            } else if (isGameOverOverlayActive) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    const activeEl = document.activeElement;
+                    const nameInput = document.getElementById('playerNameInput');
+                    
+                    if (activeEl === nameInput) {
+                        e.preventDefault();
+                        submitHighScore();
+                    } else {
+                        e.preventDefault();
+                        restartGame();
+                    }
+                }
+            }
+        });
+
+        // Initialize selection styling on startup
+        window.addEventListener('load', () => {
+            updateStartScreenSelection();
+        });
     </script>
 </body>
 </html>

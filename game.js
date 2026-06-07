@@ -61,6 +61,16 @@ class Game {
         // Visual effects
         this.screenShake = 0;
 
+        // Keyboard steering and firing support (Arcade Stick)
+        this.usingKeyboard = false;
+        this.keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            Space: false
+        };
+
         // 1000-gem Milestone Surprise (set to 100 for testing)
         this.surpriseActive = false;
         this.surpriseType = null; // Can be 'disco', 'whale', or 'phaser'
@@ -192,9 +202,10 @@ class Game {
                 if (Math.abs(e.movementX) > 1 || Math.abs(e.movementY) > 1) {
                     this.usingGamepad = false;
                     this.usingTouch = false;
+                    this.usingKeyboard = false;
                 }
 
-                if (!this.usingGamepad && !this.usingTouch) {
+                if (!this.usingGamepad && !this.usingTouch && !this.usingKeyboard) {
                     // Accumulate relative movement delta
                     this.accumulatedMouseX += e.movementX;
                     this.accumulatedMouseY += e.movementY;
@@ -203,6 +214,7 @@ class Game {
                 if (Math.abs(e.movementX) > 2 || Math.abs(e.movementY) > 2) {
                     this.usingGamepad = false;
                     this.usingTouch = false;
+                    this.usingKeyboard = false;
                 }
             }
 
@@ -255,6 +267,7 @@ class Game {
                     this.touchStickY = dy / maxRadius;
                     this.usingTouch = true;
                     this.usingGamepad = false;
+                    this.usingKeyboard = false;
                 }
             };
 
@@ -283,6 +296,7 @@ class Game {
                 this.targetSpeed = this.speedBoost;
                 this.usingTouch = true;
                 this.usingGamepad = false;
+                this.usingKeyboard = false;
             }, { passive: false });
 
             const releaseBoost = (e) => {
@@ -300,6 +314,7 @@ class Game {
                 this.isTouchFiring = true;
                 this.usingTouch = true;
                 this.usingGamepad = false;
+                this.usingKeyboard = false;
                 
                 // Initialize audio on touch action if not started
                 if (!this.audioStarted) {
@@ -331,6 +346,7 @@ class Game {
             const isLaunched = overlay && overlay.classList.contains('hidden');
 
             if (e.button === 0) { // Left Click
+                this.usingKeyboard = false;
                 this.isMousePressed = true;
                 
                 // Fire at center of screen (FPS reticle)
@@ -417,6 +433,45 @@ class Game {
             this.canvas.width = this.width;
             this.canvas.height = this.height;
             this.cockpit.layout(this.width, this.height);
+        });
+
+        // Keydown/Keyup listeners for Arcade Stick keys mapping (arrow keys & space)
+        window.addEventListener('keydown', (e) => {
+            // Prevent default behavior of arrows and space inside active gameplay to avoid browser scrolling
+            const overlay = document.getElementById('startOverlay');
+            const isStartOverlayActive = overlay && !overlay.classList.contains('hidden');
+            const gameOverOverlay = document.getElementById('gameOverOverlay');
+            const isGameOverOverlayActive = gameOverOverlay && !gameOverOverlay.classList.contains('hidden');
+
+            if (!isStartOverlayActive && !isGameOverOverlayActive) {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                    e.preventDefault();
+                }
+            }
+
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = true;
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = true;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = true;
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                this.keys.Space = true;
+                
+                // Initialize audio context if not already started
+                if (!this.audioStarted) {
+                    sounds.init();
+                    this.audioStarted = true;
+                } else {
+                    sounds.resume();
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.keys.ArrowUp = false;
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') this.keys.ArrowDown = false;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.ArrowLeft = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.ArrowRight = false;
+            if (e.key === ' ' || e.key === 'Spacebar') this.keys.Space = false;
         });
     }
 
@@ -947,11 +1002,29 @@ class Game {
             this.lockTarget = null;
         }
 
+        // Keyboard inputs (Arcade Stick)
+        let kbStickX = 0;
+        let kbStickY = 0;
+        let kbFiring = false;
+        
+        if (this.keys.ArrowLeft) kbStickX = -1;
+        if (this.keys.ArrowRight) kbStickX = 1;
+        if (this.keys.ArrowUp) kbStickY = -1;
+        if (this.keys.ArrowDown) kbStickY = 1;
+        if (this.keys.Space) kbFiring = true;
+
+        if (kbStickX !== 0 || kbStickY !== 0 || kbFiring) {
+            this.usingKeyboard = true;
+            this.usingGamepad = false;
+            this.usingTouch = false;
+        }
+
         // Determine active input mode dynamically
         // Switch to Gamepad HUD drawing mode if there is active stick motion or any button is pressed
         const gpActiveSteer = Math.abs(gpStickX) > 0.05 || Math.abs(gpStickY) > 0.05;
         if (gpActiveSteer || anyButtonPressed) {
             this.usingGamepad = true;
+            this.usingKeyboard = false;
         }
 
         // If the start screen overlay is active, any button press on the gamepad launches the game!
@@ -982,6 +1055,9 @@ class Game {
         } else if (this.usingGamepad) {
             this.targetTurnX = gpStickX * 900 * this.steerSensitivity;
             this.targetTurnY = gpStickY * 500 * this.steerSensitivity;
+        } else if (this.usingKeyboard) {
+            this.targetTurnX = kbStickX * 950 * this.steerSensitivity;
+            this.targetTurnY = kbStickY * 550 * this.steerSensitivity;
         } else {
             // Determine sign of mouse movement deltas
             const currentSignX = Math.sign(this.accumulatedMouseX);
@@ -1034,14 +1110,14 @@ class Game {
 
         // Phaser Firing logic
         if (this.phaserCooldown <= 0) {
-            if (gpFiring || this.isMousePressed || this.isTouchFiring) {
+            if (gpFiring || this.isMousePressed || this.isTouchFiring || kbFiring) {
                 // Shoot directly forward at the center reticle
                 this.firePhaser(this.width / 2, this.height / 2);
             }
         }
 
         // Snappy interpolation for mouse-look (1.0 = instant direct mapping), smooth for sticks
-        const activeDamping = (this.usingGamepad || this.usingTouch) ? this.steeringDamping : 1.0;
+        const activeDamping = (this.usingGamepad || this.usingTouch || this.usingKeyboard) ? this.steeringDamping : 1.0;
         this.turnX += (this.targetTurnX - this.turnX) * activeDamping;
         this.turnY += (this.targetTurnY - this.turnY) * activeDamping;
 
@@ -1428,11 +1504,11 @@ class Game {
         const dist = this.height * 0.15; // horizontal distance from center to brackets
 
         this.ctx.save();
-        this.ctx.strokeStyle = this.usingGamepad ? '#e040fb' : '#39ff14'; // Pink for gamepad, Green for mouse
+        this.ctx.strokeStyle = (this.usingGamepad || this.usingKeyboard) ? '#e040fb' : '#39ff14'; // Pink for gamepad/keyboard, Green for mouse
         this.ctx.lineWidth = 3.5;
         this.ctx.lineCap = 'round';
         this.ctx.shadowBlur = 10;
-        this.ctx.shadowColor = this.usingGamepad ? 'rgba(224, 64, 251, 0.5)' : 'rgba(57, 255, 20, 0.5)';
+        this.ctx.shadowColor = (this.usingGamepad || this.usingKeyboard) ? 'rgba(224, 64, 251, 0.5)' : 'rgba(57, 255, 20, 0.5)';
 
         // Left Bracket '['
         this.ctx.beginPath();
@@ -1459,7 +1535,7 @@ class Game {
         // Center Dot
         this.ctx.beginPath();
         this.ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-        this.ctx.fillStyle = this.usingGamepad ? '#e040fb' : '#39ff14';
+        this.ctx.fillStyle = (this.usingGamepad || this.usingKeyboard) ? '#e040fb' : '#39ff14';
         this.ctx.fill();
         this.ctx.stroke();
 

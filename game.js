@@ -198,6 +198,11 @@ class Game {
 
         // Track mouse movement (FPS style using relative movementX/Y)
         window.addEventListener('mousemove', (e) => {
+            // Ignore mouse movement if keys are currently pressed to prevent jitter from resetting keyboard mode
+            if (this.keys.ArrowLeft || this.keys.ArrowRight || this.keys.ArrowUp || this.keys.ArrowDown || this.keys.Space) {
+                return;
+            }
+
             if (document.pointerLockElement === this.canvas) {
                 if (Math.abs(e.movementX) > 1 || Math.abs(e.movementY) > 1) {
                     this.usingGamepad = false;

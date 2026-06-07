@@ -1161,9 +1161,17 @@ class Game {
         }
 
         // Snappy interpolation for mouse-look (1.0 = instant direct mapping), smooth for sticks
-        const activeDamping = (this.usingGamepad || this.usingTouch || this.usingKeyboard) ? this.steeringDamping : 1.0;
-        this.turnX += (this.targetTurnX - this.turnX) * activeDamping;
-        this.turnY += (this.targetTurnY - this.turnY) * activeDamping;
+        let activeDamping = 1.0;
+        if (this.usingGamepad || this.usingTouch) {
+            activeDamping = this.steeringDamping; // 0.08 for sticks
+        } else if (this.usingKeyboard) {
+            activeDamping = 0.15; // Snappier response for digital arcade stick switches
+        }
+
+        // Frame-rate independent interpolation (scaled to 60 FPS reference point)
+        const lerpFactor = Math.min(1.0, activeDamping * 60 * dt);
+        this.turnX += (this.targetTurnX - this.turnX) * lerpFactor;
+        this.turnY += (this.targetTurnY - this.turnY) * lerpFactor;
 
         // Update compass heading angle based on current turning rate
         this.heading = (this.heading + this.turnX * 0.003 * dt) % (Math.PI * 2);
